@@ -1,44 +1,95 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Christina — Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Christina Mastralexi</title>
+
+  <!-- Modern, neutral typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#0a0a0a" />
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen">
-  <header class="max-w-6xl mx-auto px-6 py-10 flex justify-between items-center">
-    <h1 class="text-xl font-semibold">Christina</h1>
-    <nav class="flex gap-6 text-sm">
-      <a href="#work" class="opacity-80 hover:opacity-100">Work</a>
-      <a href="#about" class="opacity-80 hover:opacity-100">About</a>
-      <a href="#contact" class="opacity-80 hover:opacity-100">Contact</a>
+
+<body class="h-full bg-zinc-950 text-zinc-100 antialiased selection:bg-fuchsia-500/30">
+  <!-- Softer grid background -->
+  <div aria-hidden="true"
+       class="pointer-events-none fixed inset-0 opacity-[0.06]
+              [background-image:linear-gradient(to_right,rgba(255,255,255,0.25)_1px,transparent_1px),
+                                 linear-gradient(to_bottom,rgba(255,255,255,0.25)_1px,transparent_1px)]
+              [background-size:80px_80px,80px_80px]"></div>
+  <div id="boot"
+     class="fixed inset-0 z-[100] flex flex-col justify-center px-6 bg-zinc-950 font-mono text-fuchsia-400 text-sm tracking-tight leading-5">
+  <pre id="boot-lines"></pre>
+</div>
+  <!-- Header -->
+  <header class="max-w-6xl mx-auto px-5 md:px-6 py-7 flex items-center justify-between">
+    <a class="font-medium tracking-tight hover:opacity-80 transition" href="#">Christina&nbsp;Mastralexi</a>
+    <nav class="flex items-center gap-6 text-sm">
+      <a class="nav" href="#about">About</a>
+      <a class="nav" href="#work">Work</a>
+      <a class="nav" href="#log">Log</a>
+      
+      <button id="theme" class="nav rounded-md border border-zinc-800/70 px-2 py-1">0/1</button>
     </nav>
   </header>
 
-  <main class="max-w-6xl mx-auto px-6">
-    <section class="py-20">
-      <h2 class="text-5xl font-bold leading-tight">Hi, I’m <span class="text-fuchsia-400">Christina </span></h2>
-      <p class="mt-4 text-zinc-400 max-w-xl">Attempt for a portfolio.</p>
+  <main class="max-w-6xl mx-auto px-5 md:px-6">
+    <!-- Hero (left column copy; right meta) -->
+    <section class="py-12 md:py-20 grid md:grid-cols-12 gap-6">
+      <div class="md:col-span-8">
+        <h1 class="text-[32px] md:text-[52px] leading-[1.05] font-semibold tracking-tight">
+          My digital drawer of <span class="text-fuchsia-400">projects</span>.
+        </h1>
+        <p class="mt-5 max-w-2xl text-zinc-400">
+          A (hopefully) growing collection of code projects, prototypes, and unfinished ideas — some functional, some just for curiosity.
+        </p>
+      </div>
+      <div class="md:col-span-4 md:justify-self-end text-sm text-zinc-500 flex flex-col gap-2">
+        <div class="mono">/ identity — engineer, researcher </div>
+        <div class="mono">/ based in — earth</div>
+        <div class="mono">/ ping — <a class="underline" href="mailto:you@example.com">xristinamst@gmail.com</a></div>
+      </div>
     </section>
 
-    <section id="work" class="py-16">
-      <h3 class="text-2xl font-bold mb-4">Projects</h3>
-      <p class="text-zinc-400">project!</p>
+    <!-- About -->
+    <section id="about" class="py-12 md:py-16 border-t border-zinc-900/70">
+      <h2 class="h2">About</h2>
+      <div class="mt-4 max-w-2xl text-zinc-400 space-y-3">
+        <p>I'm an Electrical and Computer Engineer exploring computer vision and machine learning.</p>
+        <p>Mostly trying to make machines see a little better, and people understand a little more.</p>
+        <p>GitHub: <a class="underline" href="https://github.com/cmastral" target="_blank">cmastral</a></p>
+      </div>
     </section>
 
-    <section id="about" class="py-16">
-      <h3 class="text-2xl font-bold mb-4">About</h3>
-      <p class="text-zinc-400">About me.</p>
+    <!-- Work -->
+    <section id="work" class="py-12 md:py-16 border-t border-zinc-900/70">
+      <div class="flex items-baseline justify-between">
+        <h2 class="h2">Selected Work</h2>
+        <div id="project-count" class="mono text-xs text-zinc-500"></div>
+      </div>
+
+      <div id="grid" class="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- cards from JS -->
+      </div>
     </section>
 
-    <section id="contact" class="py-16">
-      <h3 class="text-2xl font-bold mb-4">Contact</h3>
-      <p class="text-zinc-400">Reach me at <a class="underline" href="mailto:you@example.com">xristinamst@gmail.com</a></p>
+    <!-- Log -->
+    <section id="log" class="py-12 md:py-16 border-t border-zinc-900/70">
+      <h2 class="h2">Log</h2>
+      <div id="log-list" class="mt-6 space-y-5">
+        <!-- log items from JS -->
+      </div>
     </section>
+
+
   </main>
 
-  <footer class="py-10 text-center text-sm text-zinc-500">© <span id="year"></span> Christina </footer>
-  <canvas id="bg" class="fixed inset-0 -z-10"></canvas>
+  <footer class="py-10 text-center text-xs text-zinc-500 border-t border-zinc-900/70">
+    © <span id="year"></span> cmastral
+  </footer>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

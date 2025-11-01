@@ -1,52 +1,100 @@
-import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.js'
+import "./style.css";
 
-document.querySelector('#app').innerHTML = `
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-      <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-    </a>
-    <h1>Hello Vite!</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
+const $ = (q, root = document) => root.querySelector(q);
+
+// --- Boot intro typing effect ---
+const boot = document.getElementById("boot");
+const linesEl = document.getElementById("boot-lines");
+
+// the lines that will "type" onto screen
+const bootLines = [
+  "> INITIALIZING INTERFACE...",
+  "> BOOTING SEQUENCE 0.1b",
+  "> LOADING QUESTIONABLE IDEAS: [███████████░░░░░░░░░░]",
+  "> DEBUGGING REALITY LAYER...",
+  "> STATUS: A BIT UNSTABLE",
+  "> WELCOME, CURIOUS HUMAN",
+  "> SYSTEM READY_"
+];
+
+let i = 0, char = 0;
+const speed = 40; // typing speed (ms per character)
+
+function typeLine() {
+  if (i < bootLines.length) {
+    const line = bootLines[i];
+    if (char < line.length) {
+      linesEl.textContent += line[char++];
+      setTimeout(typeLine, speed);
+    } else {
+      linesEl.textContent += "\n";
+      i++; char = 0;
+      setTimeout(typeLine, 300);
+    }
+  } else {
+    // fade out once done
+    setTimeout(() => {
+      boot.style.opacity = 0;
+      setTimeout(() => boot.remove(), 700);
+    }, 800);
+  }
+}
+
+window.addEventListener("load", () => typeLine());
+// year
+$("#year").textContent = new Date().getFullYear();
+
+// theme toggle (keep simple; dark default)
+const themeBtn = document.getElementById("theme");
+themeBtn.addEventListener("click", () => {
+  const light = document.body.classList.toggle("light");
+  document.body.classList.toggle("dark", !light);
+});
+// light mode styles (minimal) via direct classes:
+const style = document.createElement("style");
+style.textContent = `
+  body.light { background:#f6f6f6; color:#0b0b0b; }
+  body.light .card { background:rgba(255,255,255,.7); border-color:#e5e5e5; }
+  body.light .card:hover { background:#fff; border-color:#bdbdbd; }
+`;
+document.head.appendChild(style);
+
+// Data
+const projects = [
+  { title: "Autonomous Vehicle Perception", blurb: "Thesis project integrating object detection, behavior prediction & route planning.", link: "https://github.com/cmastral/Autonomous-Vehicle", tags: ["Computer Vision", "Autonomous Vehicles"] },
+  { title: "Game Development - Unreal Engine", blurb: "Prototype game development in Unreal Engine 5.", link: "https://github.com/cmastral/UE5_Game_Development", tags: ["Game development","Unreal Engineer", "Computer Graphics"] },
+];
+
+const log = [
+  { date: "2025-11-1", text: "Deployed this website." },
+];
+
+// Render projects
+$("#project-count").textContent = `${projects.length} projects`;
+document.getElementById("grid").innerHTML = projects.map(p => `
+  <a href="${p.link}" target="_blank" class="card block">
+    <div class="p-5">
+      <div class="flex items-start justify-between">
+        <h3 class="text-base font-semibold tracking-tight hover:underline">${p.title}</h3>
+        <span class="badge">0/1</span>
+      </div>
+      <p class="mt-2 text-sm text-zinc-400">${p.blurb}</p>
+      <div class="mt-4 flex gap-2 flex-wrap">
+        ${p.tags.map(t => `<span class="badge">${t}</span>`).join("")}
+      </div>
     </div>
-    <p class="read-the-docs">
-      Click on the Vite logo to  hihihih learn more
-    </p>
+    <div class="hr opacity-0 group-hover:opacity-100"></div>
+    <div class="p-5 pt-4 text-xs text-zinc-500">Open ↗</div>
+  </a>
+`).join("");
+
+// Render log
+document.getElementById("log-list").innerHTML = log.map(i => `
+  <div class="flex items-start gap-4">
+    <div class="mt-1 h-2 w-2 rounded-full bg-fuchsia-500"></div>
+    <div>
+      <div class="mono text-[11px] text-zinc-500">${i.date}</div>
+      <div class="text-sm">${i.text}</div>
+    </div>
   </div>
-`
-
-// Set current year
-document.getElementById("year").textContent = new Date().getFullYear();
-
-// Example interactive background
-const c = document.getElementById("bg");
-const ctx = c.getContext("2d");
-let w, h, dots = [];
-
-function resize() {
-  w = c.width = innerWidth; h = c.height = innerHeight;
-  dots = Array.from({length: 80}, () => ({
-    x: Math.random()*w, y: Math.random()*h,
-    vx: (Math.random()-0.5)*0.6, vy: (Math.random()-0.5)*0.6
-  }));
-}
-addEventListener("resize", resize); resize();
-
-function frame() {
-  ctx.clearRect(0,0,w,h);
-  ctx.globalAlpha = 0.6;
-  dots.forEach(p=>{
-    p.x+=p.vx; p.y+=p.vy;
-    if (p.x<0||p.x>w) p.vx*=-1;
-    if (p.y<0||p.y>h) p.vy*=-1;
-    ctx.beginPath(); ctx.arc(p.x,p.y,1.5,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill();
-  });
-  requestAnimationFrame(frame);
-}
-frame();
+`).join("");
