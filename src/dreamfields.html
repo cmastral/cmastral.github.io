@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dreamfields</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script type="module" src="/src/dreamfields.js"></script>
+    <link rel="stylesheet" href="/src/dreamfields.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>Dreamfields</h1>
+      <p class="hint">Type a dream you're trying to remember.</p>
+
+      <div class="row">
+        <input id="prompt" placeholder="neural forest at dawn" />
+        <button id="go">Generate</button>
+        <button id="stop" class="ghost">Stop</button>
+      </div>
+
+      <div class="stage">
+        <canvas id="dream" width="1024" height="576"></canvas>
+        <div id="status" class="status">idle</div>
+      </div>
+
+      <div class="tip">dreamfields</div>
+    </main>
+  </body>
+</html>

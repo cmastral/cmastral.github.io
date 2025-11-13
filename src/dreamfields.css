@@ -1,0 +1,14 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin:0; background:#0a0a0a; color:#eaeaea; font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto; }
+.wrap { max-width: 980px; margin: 40px auto; padding: 0 20px; }
+h1 { font-size: 28px; margin: 0 0 6px; }
+.hint { color: #a1a1aa; margin-bottom: 16px; }
+.row { display:flex; gap:10px; align-items:center; }
+input { flex:1; background:#121212; border:1px solid #2a2a2a; color:#eaeaea; padding:10px 12px; border-radius:12px; }
+button { padding:10px 14px; border-radius:12px; background:#f472b6; color:#0a0a0a; border:none; cursor:pointer; }
+button.ghost { background: transparent; color:#eaeaea; border:1px solid #2a2a2a; }
+.stage { position: relative; margin-top:16px; border:1px solid #2a2a2a; border-radius:16px; overflow:hidden; background:#0b0b0b; }
+canvas { width:100%; display:block; height:auto; }
+.status { position:absolute; right:10px; bottom:10px; font-size:12px; color:#a1a1aa; background:rgba(0,0,0,0.35); padding:4px 8px; border-radius:8px; }
+.tip { margin-top:10px; color:#a1a1aa; }
