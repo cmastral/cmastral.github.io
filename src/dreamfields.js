@@ -1,4 +1,4 @@
-const API = "http://localhost:8787/api/dream";
+const API = "https://dreamfields-worker.cmastral.workers.dev/api/dream";
 
 const promptEl = document.getElementById("prompt");
 const goBtn    = document.getElementById("go");
