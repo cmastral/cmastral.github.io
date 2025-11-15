@@ -43,7 +43,7 @@
           My digital drawer of <span class="text-fuchsia-400">projects</span>.
         </h1>
         <p class="mt-5 max-w-2xl text-zinc-400">
-          A (hopefully) growing collection of code projects, prototypes, and unfinished ideas — some functional, some just for curiosity.
+          A (hopefully) growing collection of code projects, papers, prototypes, and unfinished ideas — some functional, some just for curiosity.
         </p>
       </div>
       <div class="md:col-span-4 md:justify-self-end text-sm text-zinc-500 flex flex-col gap-2">
@@ -60,13 +60,140 @@
         <p>I'm an Electrical and Computer Engineer exploring computer vision and machine learning.</p>
         <p>Mostly trying to make machines see a little better, and people understand a little more.</p>
         <p>GitHub: <a class="underline" href="https://github.com/cmastral" target="_blank">cmastral</a></p>
+        <!-- <p>LinkedIn: <a class="underline" href="https://www.linkedin.com/in/christina-mastralexi/" target="_blank">cmastral</a></p> -->
+
       </div>
+      <!-- Life path: abstract neural constellation -->
+<div id="life-path-graphic" class="relative flex justify-center mt-6">
+  <svg
+    width="420"
+    height="220"
+    viewBox="0 0 420 220"
+    class="opacity-70 transition-opacity duration-700"
+  >
+    <!-- faint background nodes (no labels) -->
+    <circle cx="70" cy="60" r="3" fill="#52525b" opacity="0.4" />
+    <circle cx="340" cy="60" r="3" fill="#52525b" opacity="0.4" />
+    <circle cx="210" cy="40" r="3" fill="#52525b" opacity="0.4" />
+    <circle cx="90" cy="190" r="3" fill="#52525b" opacity="0.4" />
+    <circle cx="300" cy="190" r="3" fill="#52525b" opacity="0.4" />
+
+    <!-- soft “neural” connections -->
+    <path
+      d="M110 150 Q 140 110 210 90 T 280 80"
+      fill="none"
+      stroke="#f472b6"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-opacity="0.65"
+      stroke-dasharray="180"
+      stroke-dashoffset="180"
+      id="path-main"
+    />
+    <path
+      d="M210 90 Q 260 120 330 140"
+      fill="none"
+      stroke="#f472b6"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-dasharray="140"
+      stroke-dashoffset="140"
+      stroke-opacity="0.8"
+      id="path-future"
+    />
+
+    <!-- Greece node -->
+    <g class="group">
+      <circle
+        cx="110"
+        cy="150"
+        r="7"
+        class="fill-pink-300 transition-transform duration-300 group-hover:scale-110"
+      />
+      <text
+        x="110"
+        y="172"
+        text-anchor="middle"
+        class="fill-pink-200 text-[11px] font-mono"
+      >
+        Thessaloniki, Greece
+      </text>
+      <text
+        x="110"
+        y="186"
+        text-anchor="middle"
+        class="fill-pink-500 text-[10px] font-mono opacity-70"
+      >
+        origin
+      </text>
+    </g>
+
+    <!-- Portugal node -->
+    <g class="group">
+      <circle
+        cx="210"
+        cy="90"
+        r="7"
+        class="fill-pink-300 transition-transform duration-300 group-hover:scale-110"
+      />
+      <text
+        x="210"
+        y="68"
+        text-anchor="middle"
+        class="fill-pink-200 text-[11px] font-mono"
+      >
+        Porto, Portugal
+      </text>
+      <text
+        x="210"
+        y="82"
+        text-anchor="middle"
+        class="fill-pink-500 text-[10px] font-mono opacity-70"
+      >
+        now
+      </text>
+    </g>
+
+    <!-- Future node -->
+    <g class="group">
+      <circle
+        cx="330"
+        cy="140"
+        r="7"
+        class="fill-pink-400 animate-ping"
+      />
+      <circle
+        cx="330"
+        cy="140"
+        r="7"
+        class="fill-pink-400 opacity-80 transition-transform duration-300 group-hover:scale-110"
+      />
+      <text
+        x="330"
+        y="118"
+        text-anchor="middle"
+        class="fill-pink-200 text-[11px] font-mono"
+      >
+        ?
+      </text>
+      <text
+        x="330"
+        y="132"
+        text-anchor="middle"
+        class="fill-pink-500 text-[10px] font-mono opacity-70"
+      >
+        next node
+      </text>
+    </g>
+  </svg>
+</div>
+
     </section>
 
     <!-- Work -->
     <section id="work" class="py-12 md:py-16 border-t border-zinc-900/70">
       <div class="flex items-baseline justify-between">
-        <h2 class="h2">Selected Work</h2>
+        <h2 class="h2">Work</h2>
         <div id="project-count" class="mono text-xs text-zinc-500"></div>
       </div>
 
