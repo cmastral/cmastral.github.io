@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ask_christina()</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/src/ask-christina.css" />
+  </head>
+  <body class="ask-christina-body">
+    <div class="wrap">
+      <a href="/" class="back-link">← back to main</a>
+
+      <h1>ask_christina()</h1>
+      <p>
+        a small agent that only knows my CV, research, and projects. you can ask
+        about my background, skills, or what i’ve been working on.
+      </p>
+
+      <div class="panel">
+        <div id="chat"></div>
+        <div id="thinking"></div>
+        <form id="form">
+          <input
+            id="input"
+            placeholder="ask me something about my work, studies, or projects…"
+            autocomplete="off"
+          />
+          <button type="submit">send</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- JS logic lives in a separate file now -->
+    <script type="module" src="/src/ask-christina.js"></script>
+  </body>
+</html>

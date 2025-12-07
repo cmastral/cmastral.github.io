@@ -1,0 +1,147 @@
+:root {
+  color-scheme: dark;
+  --pink: #f472b6;
+  --bg: #050505;
+  --border: #4b1641;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body.ask-christina-body {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  background: radial-gradient(circle at top, #111 0, #050505 55%);
+  color: #f9a8d4;
+}
+
+/* layout wrapper */
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+}
+
+/* back link */
+.back-link {
+  font-size: 0.85rem;
+  color: #f9a8d4;
+  text-decoration: none;
+}
+.back-link:hover {
+  text-decoration: underline;
+}
+
+/* heading & subtitle */
+h1 {
+  font-size: 1.6rem;
+  margin-bottom: 0.25rem;
+}
+
+p {
+  font-size: 0.85rem;
+  color: #f9a8d4b3;
+  margin-top: 0;
+}
+
+/* main chat panel */
+.panel {
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  padding: 0.75rem;
+  margin-top: 1.25rem;
+  background: #050509;
+  box-shadow: 0 0 30px rgba(244, 114, 182, 0.08);
+  height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* chat messages container */
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+/* rows and bubbles */
+.row {
+  display: flex;
+  margin-bottom: 0.4rem;
+}
+
+.row.user {
+  justify-content: flex-end;
+}
+
+.row.assistant {
+  justify-content: flex-start;
+}
+
+.bubble {
+  max-width: 80%;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid #4b1641;
+  background: rgba(244, 114, 182, 0.06);
+  white-space: pre-wrap;
+}
+
+.row.user .bubble {
+  background: rgba(244, 114, 182, 0.12);
+}
+
+/* form */
+form {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid #27272f;
+}
+
+/* input */
+input {
+  flex: 1;
+  background: transparent;
+  border-radius: 999px;
+  border: 1px solid #4b1641;
+  padding: 0.5rem 0.8rem;
+  color: #f9a8d4;
+  font-size: 0.8rem;
+}
+
+input::placeholder {
+  color: #6b214f;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--pink);
+}
+
+/* button */
+button {
+  border-radius: 999px;
+  border: 1px solid var(--pink);
+  background: transparent;
+  color: var(--pink);
+  padding: 0.45rem 0.9rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--pink);
+  color: #050505;
+}
+
+/* thinking indicator */
+#thinking {
+  font-size: 0.7rem;
+  color: #f9a8d4b3;
+  margin-top: 0.25rem;
+}

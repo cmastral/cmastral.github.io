@@ -6,6 +6,7 @@ export default defineConfig({
       input: {
         main: "index.html",
         dreamfields: "src/dreamfields.html",
+        askChristina: "src/ask-christina.html",
       },
     },
   },
