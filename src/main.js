@@ -112,6 +112,7 @@ const projects = [
 ];
 
 const log = [
+  { date: "2025-12-07", text: "Added my CV Agent." },
   { date: "2025-11-14", text: "Added Playground Section." },
   { date: "2025-11-1", text: "Deployed this website." },
 ];
