@@ -1,29 +1,556 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Dreamfields</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script type="module" src="/src/dreamfields.js"></script>
-    <link rel="stylesheet" href="/src/dreamfields.css" />
-  </head>
-  <body>
-    <main class="wrap">
-      <h1>Dreamfields</h1>
-      <p class="hint">Type a dream you're trying to remember.</p>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>dreamfields_ — cmastral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --fg: #e8e0d0;
+    --accent: #ff3c1f;
+    --accent2: #00ffb3;
+    --muted: #3a3a3a;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-mono: 'Fragment Mono', monospace;
+    --font-body: 'Space Mono', monospace;
+  }
 
-      <div class="row">
-        <input id="prompt" placeholder="neural forest at dawn" />
-        <button id="go">Generate</button>
-        <button id="stop" class="ghost">Stop</button>
-      </div>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-      <div class="stage">
-        <canvas id="dream" width="1024" height="576"></canvas>
-        <div id="status" class="status">idle</div>
-      </div>
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    cursor: none;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
 
-      <div class="tip">dreamfields</div>
-    </main>
-  </body>
+  /* NOISE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9000;
+    opacity: 0.4;
+  }
+
+  /* SCANLINE */
+  .scanline {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: rgba(0, 255, 179, 0.05);
+    z-index: 8999;
+    pointer-events: none;
+    animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove {
+    from { top: -2px; }
+    to { top: 100vh; }
+  }
+
+  /* CURSOR */
+  #cursor {
+    position: fixed;
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: difference;
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid var(--fg);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    opacity: 0.5;
+  }
+  body:has(a:hover) #cursor,
+  body:has(button:hover) #cursor { width: 18px; height: 18px; background: var(--accent2); }
+  body:has(a:hover) #cursor-ring,
+  body:has(button:hover) #cursor-ring { width: 56px; height: 56px; border-color: var(--accent2); }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    mix-blend-mode: difference;
+  }
+  .nav-logo {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--fg);
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+  .nav-back {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--fg);
+    text-decoration: none;
+    text-transform: uppercase;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nav-back:hover { opacity: 1; }
+
+  /* MAIN */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 140px 40px 80px;
+  }
+
+  /* HEADER */
+  .page-header {
+    margin-bottom: 60px;
+  }
+  .page-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .page-label::before {
+    content: '';
+    width: 30px; height: 1px;
+    background: var(--accent);
+  }
+  .page-title {
+    font-family: var(--font-display);
+    font-size: clamp(64px, 10vw, 120px);
+    line-height: 0.9;
+    color: var(--fg);
+    position: relative;
+    display: inline-block;
+  }
+  .page-title .glitch { position: relative; display: inline-block; }
+  .page-title .glitch::before,
+  .page-title .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    font-family: var(--font-display);
+    font-size: inherit;
+    line-height: inherit;
+  }
+  .page-title .glitch::before {
+    color: var(--accent);
+    animation: glitch1 5s infinite;
+    clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%);
+  }
+  .page-title .glitch::after {
+    color: var(--accent2);
+    animation: glitch2 5s infinite;
+    clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+  }
+  @keyframes glitch1 {
+    0%, 90%, 100% { transform: translate(0); opacity: 0; }
+    91% { transform: translate(-4px, 2px); opacity: 1; }
+    93% { transform: translate(4px, -2px); opacity: 1; }
+    95% { transform: translate(0); opacity: 0; }
+  }
+  @keyframes glitch2 {
+    0%, 85%, 100% { transform: translate(0); opacity: 0; }
+    86% { transform: translate(4px, -2px); opacity: 1; }
+    88% { transform: translate(-4px, 2px); opacity: 1; }
+    90% { transform: translate(0); opacity: 0; }
+  }
+
+  .page-desc {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--fg);
+    opacity: 0.55;
+    max-width: 480px;
+    margin-top: 24px;
+  }
+
+  /* INPUT ROW */
+  .input-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+    margin-bottom: 24px;
+  }
+
+  .dream-input {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--muted);
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 14px 18px;
+    outline: none;
+    transition: border-color 0.3s;
+    letter-spacing: 0.05em;
+  }
+  .dream-input::placeholder { color: var(--muted); }
+  .dream-input:focus { border-color: var(--accent2); }
+
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 14px 24px;
+    border: none;
+    cursor: none;
+    transition: background 0.3s, color 0.3s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover { background: var(--fg); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid var(--muted);
+  }
+  .btn-ghost:hover { border-color: var(--fg); }
+
+  /* STAGE */
+  .stage {
+    position: relative;
+    border: 1px solid var(--muted);
+    overflow: hidden;
+    background: #050505;
+  }
+  .stage:has(canvas) { aspect-ratio: 16/9; }
+
+  canvas {
+    width: 100%;
+    display: block;
+    height: auto;
+  }
+
+  .status-badge {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    background: rgba(0,0,0,0.6);
+    padding: 6px 12px;
+    border: 1px solid rgba(0,255,179,0.2);
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--muted);
+    padding: 24px 40px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-top: 80px;
+  }
+
+  @media (max-width: 768px) {
+    nav, main, footer { padding-left: 20px; padding-right: 20px; }
+    .input-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div class="scanline"></div>
+
+<nav>
+  <a href="/" class="nav-logo">cmastral_</a>
+  <a href="/" class="nav-back">← back</a>
+</nav>
+
+<main>
+  <div class="page-header">
+    <div class="page-label">Playground / 01</div>
+    <h1 class="page-title">
+      <span class="glitch" data-text="dreamfields_">dreamfields_</span>
+    </h1>
+    <p class="page-desc">Type a dream you're trying to remember. Watch it drift, glitch, and wake up.</p>
+  </div>
+
+  <div class="input-row">
+    <input id="prompt" class="dream-input" placeholder="neural forest at dawn" />
+    <button id="go" class="btn btn-primary">Generate</button>
+    <button id="stop" class="btn btn-ghost">Stop</button>
+  </div>
+
+  <div class="stage">
+    <canvas id="dream" width="1024" height="576"></canvas>
+    <div id="status" class="status-badge">idle</div>
+  </div>
+</main>
+
+<footer>
+  <span>© <span id="footer-year"></span> Christina Mastralexi</span>
+  <span>dreamfields_</span>
+  <span>cmastral.github.io</span>
+</footer>
+
+<script>
+// CURSOR
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+});
+function animateRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+
+// FOOTER YEAR
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+// ---- DREAMFIELDS LOGIC (unchanged) ----
+const API = "https://dreamfields-worker.cmastral.workers.dev/api/dream";
+
+const promptEl = document.getElementById("prompt");
+const goBtn    = document.getElementById("go");
+const stopBtn  = document.getElementById("stop");
+const canvas   = document.getElementById("dream");
+const ctx      = canvas.getContext("2d");
+const statusEl = document.getElementById("status");
+
+function addStatic(ctx, alpha = 0.06) {
+  const { width, height } = ctx.canvas;
+  const id = ctx.getImageData(0, 0, width, height);
+  const data = id.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 255 * alpha;
+    data[i] += n; data[i+1] += n; data[i+2] += n;
+  }
+  ctx.putImageData(id, 0, 0);
+}
+function rgbShift(ctx, amount = 3) {
+  const { width, height } = ctx.canvas;
+  const imgData = ctx.getImageData(0, 0, width, height);
+  const data = imgData.data;
+  for (let y = 0; y < height; y++) {
+    for (let x = width - 1; x >= amount; x--) {
+      const i = (y * width + x) * 4;
+      const j = (y * width + (x - amount)) * 4;
+      data[i] = data[j];
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+let img = null;
+let raf = 0;
+let t = 0;
+let running = false;
+
+const DURATION = {
+  dream:    15000,
+  wakeFade: 700,
+  wakeHold: 650,
+  wakeOut:  350,
+};
+
+let phase = "dream";
+let phaseT0 = performance.now();
+const phaseElapsed = () => performance.now() - phaseT0;
+const setPhase = (p) => { phase = p; phaseT0 = performance.now(); };
+const setStatus = (s) => { statusEl.textContent = s; };
+
+function draw() {
+  if (!running) return;
+  raf = requestAnimationFrame(draw);
+
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+  ctx.filter = "none";
+
+  if (!img) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    return;
+  }
+
+  if (phase === "dream" && phaseElapsed() > DURATION.dream) setPhase("wake");
+
+  if (phase === "dream") {
+    t += 0.003;
+    const dx = Math.sin(t) * 8;
+    const dy = Math.cos(t * 0.7) * 6;
+    ctx.globalAlpha = 0.92;
+    ctx.drawImage(img, dx, dy, canvas.width, canvas.height);
+    ctx.filter = `blur(${Math.sin(t)*1.5 + 1.5}px)`;
+    ctx.globalCompositeOperation = "hue";
+    ctx.fillStyle = `hsl(${(t*50)%360}, 50%, 50%)`;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.filter = "none";
+    if (Math.random() < 0.10) rgbShift(ctx, Math.floor(Math.random()*4));
+    if (Math.random() < 0.20) addStatic(ctx, 0.08);
+    const grd = ctx.createRadialGradient(
+      canvas.width/2, canvas.height/2, Math.min(canvas.width, canvas.height)/4,
+      canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height)/1.1
+    );
+    grd.addColorStop(0, "rgba(0,0,0,0)");
+    grd.addColorStop(1, "rgba(0,0,0,0.24)");
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = grd;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
+    return;
+  }
+
+  if (phase === "wake") {
+    const te = phaseElapsed();
+    const { wakeFade, wakeHold, wakeOut } = DURATION;
+
+    if (te <= wakeFade) {
+      const k = te / wakeFade;
+      ctx.globalAlpha = k;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.globalAlpha = 1;
+    } else if (te <= wakeFade + wakeHold) {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      if (Math.random() > 0.15) {
+        ctx.fillStyle = "#ff3c1f";
+        ctx.font = "bold 60px 'Bebas Neue', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("WAKE UP_", canvas.width/2, canvas.height/2);
+      }
+      if (Math.random() < 0.35) {
+        ctx.translate((Math.random()-0.5)*6, (Math.random()-0.5)*6);
+      }
+    } else if (te <= wakeFade + wakeHold + wakeOut) {
+      const k = 1 - (te - wakeFade - wakeHold) / wakeOut;
+      ctx.globalAlpha = k;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.globalAlpha = 1;
+    } else {
+      setPhase("done");
+      cancelAnimationFrame(raf);
+      running = false;
+      setStatus("idle");
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = "#ff3c1f";
+      ctx.font = "bold 60px 'Bebas Neue', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("WAKE UP_", canvas.width/2, canvas.height/2);
+
+      setTimeout(async () => {
+        phase = "dream";
+        phaseT0 = performance.now();
+        running = true;
+        setStatus("animating");
+        draw();
+      }, 3000);
+    }
+
+    ctx.restore();
+    return;
+  }
+
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.restore();
+}
+
+async function generate(prompt) {
+  setStatus("calling model…");
+  const r = await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  const data = await r.json();
+  if (!data.url) throw new Error("no_image_returned");
+  setStatus("loading image…");
+  const image = new Image();
+  image.crossOrigin = "anonymous";
+  image.src = data.url;
+  await new Promise((res, rej) => {
+    image.onload = () => res();
+    image.onerror = rej;
+  });
+  return image;
+}
+
+goBtn.addEventListener("click", async () => {
+  try {
+    cancelAnimationFrame(raf);
+    running = true;
+    setStatus("generating…");
+    img = await generate(promptEl.value || "neural forest at dawn");
+    t = 0;
+    setPhase("dream");
+    setStatus("animating");
+    draw();
+  } catch (e) {
+    console.error(e);
+    setStatus("error");
+    alert("Generation failed. Check the server logs.");
+  }
+});
+
+function stop() {
+  if (phase === "dream") setPhase("wake");
+}
+stopBtn.addEventListener("click", stop);
+
+promptEl.value = "electric nostalgia";
+</script>
+</body>
 </html>
