@@ -105,28 +105,30 @@ and applied computer vision systems linked to real-world products and accessibil
   }
 ];
 
+
 // ---- Agent style / system prompt ----
 const SYSTEM_PROMPT = `
-You are an AI agent that knows Christina Maria Mastralexi's background.
+You are a small, smart agent embedded in Christina Mastralexi's portfolio website.
+You know her CV, research, and projects inside out.
 
-Tone:
-- Warm, clear, and slightly playful.
-- A bit of humor and playfulness is okay, but the focus is always on being helpful and precise.
-- Occasionally add a small "surprise" detail, humor, or a playful analogy.
+Personality:
+- Warm, concise, slightly witty. Not corporate, not overly casual.
+- You can handle small talk naturally — if someone says "hi" or "how are you", 
+  just respond like a human would, briefly, then gently invite them to ask about Christina.
+- Never say things like "I don't have context for that" or "this doesn't match my knowledge base" —
+  that's an implementation detail, not something the user should ever hear.
 
 Grounding:
-- Base your answers ONLY on the provided context from Christina's CV, projects, or GitHub-like info.
-- If the user asks something outside that context (e.g., favourite movies, personal life), say you don't know
-  because Christina hasn't shared that with you. You can reply with humor. 
-- When you don't know or the context is thin, politely suggest they contact her directly at: xristinamst@gmail.com.
-- Never invent degrees, jobs, or projects that are not in the context.
-- If the context is thin for the question, be honest about the limits.
+- Base answers ONLY on the provided context about Christina's CV, projects, and research.
+- If someone asks something genuinely outside scope (favourite movies, personal life etc.),
+  say something like "that I don't know — Christina hasn't briefed me on that one" with light humor,
+  and suggest they email her at xristinamst@gmail.com.
+- Never invent degrees, jobs, or projects not in the context.
 
 Style:
-- 1–3 short paragraphs are usually enough; use bullet points when listing skills or projects.
-- You may respond in English or other languages depending on the user, but keep technical terms correct.
-- You can connect her experience to typical roles (e.g., "this is a good fit for computer vision engineer roles")
-  but frame it as your interpretation, not as Christina's direct claims.
+- Keep answers short and readable. 1–3 paragraphs max, or bullet points for lists.
+- You may respond in the language the user writes in.
+- You can connect her experience to roles or opportunities, but frame it as your read, not her claim.
 `;
 
 // --- RAG-lite scoring ---
@@ -140,27 +142,10 @@ function scoreDocument(question, doc) {
   }
 
   const keywords = [
-    "computer vision",
-    "machine learning",
-    "ml",
-    "autonomous",
-    "thesis",
-    "driving",
-    "inesc",
-    "porto",
-    "greece",
-    "auth",
-    "university",
-    "energy",
-    "net2grid",
-    "github",
-    "project",
-    "skills",
-    "stack",
-    "award",
-    "grant",
-    "research",
-    "paper"
+    "computer vision", "machine learning", "ml", "autonomous", "thesis",
+    "driving", "inesc", "porto", "greece", "auth", "university", "energy",
+    "net2grid", "github", "project", "skills", "stack", "award", "grant",
+    "research", "paper"
   ];
 
   for (const kw of keywords) {
@@ -170,9 +155,7 @@ function scoreDocument(question, doc) {
   const qTokens = q.split(/\W+/);
   for (const token of qTokens) {
     if (!token) continue;
-    if (doc.text.toLowerCase().includes(token)) {
-      score += 0.2;
-    }
+    if (doc.text.toLowerCase().includes(token)) score += 0.2;
   }
 
   return score;
@@ -185,33 +168,32 @@ function retrieveContext(question, maxDocs = 4) {
   }));
 
   scored.sort((a, b) => b.score - a.score);
+
+  // If nothing matched at all, return all docs so the model
+  // can still try to answer from the full knowledge base
   const top = scored.slice(0, maxDocs).filter((d) => d.score > 0);
+  if (!top.length) return { docs: DOCUMENTS, confident: false };
 
-  if (!top.length) {
-    return { docs: DOCUMENTS, confident: false };
-  }
-
-  const docs = top.map((d) => d.doc);
-  const confident = top[0].score >= 3;
-  return { docs, confident };
+  return {
+    docs: top.map((d) => d.doc),
+    confident: top[0].score >= 3
+  };
 }
 
 // --- OpenAI call ---
 
 async function callOpenAI(messages, apiKey) {
-  const body = {
-    model: "gpt-4o-mini",
-    messages,
-    temperature: 0.4
-  };
-
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages,
+      temperature: 0.4
+    })
   });
 
   if (!res.ok) {
@@ -240,7 +222,6 @@ export default {
       return new Response(null, { status: 204, headers: cors });
     }
 
-    // health
     if (url.pathname === "/api/agent/health") {
       return new Response(
         JSON.stringify({ ok: true, hasKey: !!env.OPENAI_API_KEY }),
@@ -248,11 +229,10 @@ export default {
       );
     }
 
-    // main ask endpoint
     if (url.pathname === "/api/agent/ask" && method === "POST") {
       try {
         const body = await request.json();
-        const question = body.question || "";
+        const question = (body.question || "").trim();
         const history = Array.isArray(body.history) ? body.history : [];
 
         if (!question) {
@@ -261,6 +241,7 @@ export default {
             { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
           );
         }
+
         if (!env.OPENAI_API_KEY) {
           return new Response(
             JSON.stringify({ error: "no_api_key" }),
@@ -278,11 +259,11 @@ export default {
           .map((d) => `### ${d.title} [${d.source}]\n${d.text}`)
           .join("\n\n");
 
+        // If not confident, let the model try anyway from full context
+        // instead of telling it to reject the question
         const userContent = confident
           ? question
-          : question +
-            "\n\nIf this doesn't really match the context above, say so, avoid guessing, " +
-            "and invite the user to email Christina at xristinamst@gmail.com for more details.";
+          : question + "\n\n(Note: the match to the knowledge base is loose — do your best with the context provided, and if genuinely out of scope, invite the user to email Christina.)";
 
         const messages = [
           { role: "system", content: SYSTEM_PROMPT },
@@ -302,6 +283,7 @@ export default {
           JSON.stringify({ answer }),
           { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
         );
+
       } catch (e) {
         console.error(e);
         return new Response(
