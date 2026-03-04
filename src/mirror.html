@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>mirror_ — cmastral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='72' x='50' text-anchor='middle' font-family='monospace' font-size='64' font-weight='700' fill='%23ff3c1f'>c</text></svg>">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --fg: #e8e0d0;
+    --accent: #ff3c1f;
+    --accent2: #00ffb3;
+    --muted: #3a3a3a;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-mono: 'Fragment Mono', monospace;
+    --font-body: 'Space Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    cursor: none;
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9000;
+    opacity: 0.4;
+  }
+
+  .scanline {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: rgba(0,255,179,0.05);
+    z-index: 8999;
+    pointer-events: none;
+    animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove { from { top: -2px; } to { top: 100vh; } }
+
+  #cursor {
+    position: fixed;
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: difference;
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid var(--fg);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    opacity: 0.5;
+  }
+  body:has(a:hover) #cursor,
+  body:has(button:hover) #cursor { width: 18px; height: 18px; background: var(--accent2); }
+  body:has(a:hover) #cursor-ring,
+  body:has(button:hover) #cursor-ring { width: 56px; height: 56px; border-color: var(--accent2); }
+
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    mix-blend-mode: difference;
+  }
+  .nav-logo {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--fg);
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+  .nav-back {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--fg);
+    text-decoration: none;
+    text-transform: uppercase;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+  }
+  .nav-back:hover { opacity: 1; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 140px 40px 80px;
+    flex: 1;
+    width: 100%;
+  }
+
+  .page-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .page-label::before {
+    content: '';
+    width: 30px; height: 1px;
+    background: var(--accent);
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: clamp(64px, 10vw, 120px);
+    line-height: 0.9;
+    color: var(--fg);
+    margin-bottom: 20px;
+  }
+
+  .page-desc {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.9;
+    color: var(--fg);
+    opacity: 0.5;
+    max-width: 480px;
+    margin-bottom: 48px;
+  }
+
+  .start-block {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 14px 28px;
+    border: none;
+    cursor: none;
+    transition: background 0.3s, color 0.3s;
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn:hover { background: var(--fg); }
+  .btn.ghost {
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid var(--muted);
+  }
+  .btn.ghost:hover { border-color: var(--fg); }
+  .btn:disabled { background: var(--muted); color: #555; pointer-events: none; }
+
+  /* STAGE */
+  .stage { display: none; }
+  .stage.visible {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+  }
+
+  /* VIDEO */
+  .video-panel {
+    position: relative;
+    border: 1px solid var(--muted);
+    overflow: hidden;
+    background: #050505;
+    aspect-ratio: 4/3;
+  }
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scaleX(-1);
+    filter: grayscale(0.4) contrast(1.1) brightness(0.9);
+  }
+  canvas { display: none; }
+
+  .video-label {
+    position: absolute;
+    top: 12px; left: 12px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: rgba(0,0,0,0.7);
+    color: var(--muted);
+    padding: 4px 10px;
+    border: 1px solid var(--muted);
+  }
+  .pulse {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: none;
+  }
+  .pulse.active {
+    display: block;
+    animation: pulseAnim 1.5s ease-in-out infinite;
+  }
+  @keyframes pulseAnim {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.6); }
+  }
+  .progress-bar {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 2px;
+    background: var(--accent2);
+    width: 0%;
+  }
+
+  /* TEXT SIDE */
+  .text-panel {
+    border: 1px solid var(--muted);
+    background: #050505;
+    aspect-ratio: 4/3;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .privacy-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--muted);
+  max-width: 480px;
+  margin-top: -32px;
+  margin-bottom: 48px;
+  letter-spacing: 0.04em;
+}
+
+  .lens-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .lens-label.visible { opacity: 1; }
+  .lens-label::before {
+    content: '';
+    width: 16px; height: 1px;
+    background: var(--accent2);
+  }
+
+  .observation-text {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 2.1;
+    color: var(--fg);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .observation-text.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  footer {
+    border-top: 1px solid var(--muted);
+    padding: 24px 40px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-top: 40px;
+  }
+
+  @media (max-width: 768px) {
+    nav, main, footer { padding-left: 20px; padding-right: 20px; }
+    .stage.visible { grid-template-columns: 1fr; }
+    .video-panel, .text-panel { aspect-ratio: auto; min-height: 260px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div class="scanline"></div>
+
+<nav>
+  <a href="/" class="nav-logo">cmastral_</a>
+  <a href="/" class="nav-back">← back</a>
+</nav>
+
+<main>
+  <div class="page-label">Playground / 02</div>
+  <h1 class="page-title">mirror_</h1>
+  <p class="page-desc">Your webcam feed, observed through six lenses by a vision model. Not what you look like — what the model thinks you are.</p>
+   <p class="privacy-note">frames are processed in real time and never stored. your camera is only active while the session is running.</p>
+  <div class="start-block">
+    <button id="start-btn" class="btn">Start</button>
+    <button id="stop-btn" class="btn ghost" disabled>Stop</button>
+  </div>
+
+  <div id="stage" class="stage">
+    <div class="video-panel">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="canvas"></canvas>
+      <div class="video-label">live input</div>
+      <div id="pulse" class="pulse"></div>
+      <div id="progress" class="progress-bar"></div>
+    </div>
+
+    <div class="text-panel">
+      <div id="lens-label" class="lens-label">—</div>
+      <div id="observation-text" class="observation-text">—</div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span>© <span id="footer-year"></span> Christina Mastralexi</span>
+  <span>mirror_</span>
+  <span>cmastral.github.io</span>
+</footer>
+
+<script>
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+});
+function animateRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+const API = "https://mirror-worker.cmastral.workers.dev/api/mirror";
+const INTERVAL = 7000;
+
+const startBtn   = document.getElementById('start-btn');
+const stopBtn    = document.getElementById('stop-btn');
+const video      = document.getElementById('video');
+const canvas     = document.getElementById('canvas');
+const stage      = document.getElementById('stage');
+const lensLabel  = document.getElementById('lens-label');
+const obsText    = document.getElementById('observation-text');
+const pulseEl    = document.getElementById('pulse');
+const progressEl = document.getElementById('progress');
+
+const ctx = canvas.getContext('2d');
+let stream = null;
+let intervalId = null;
+let lensIndex = 0;
+let running = false;
+let isAnalyzing = false;
+
+function captureFrame() {
+  canvas.width = 640;
+  canvas.height = 480;
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+  ctx.restore();
+  return canvas.toDataURL('image/jpeg', 0.75);
+}
+
+function animateProgress() {
+  progressEl.style.transition = 'none';
+  progressEl.style.width = '0%';
+  setTimeout(() => {
+    progressEl.style.transition = `width ${INTERVAL}ms linear`;
+    progressEl.style.width = '100%';
+  }, 50);
+}
+
+function updateText(lens, text) {
+  lensLabel.classList.remove('visible');
+  obsText.classList.remove('visible');
+  setTimeout(() => {
+    lensLabel.textContent = lens;
+    obsText.textContent = text;
+    lensLabel.classList.add('visible');
+    obsText.classList.add('visible');
+  }, 400);
+}
+
+async function observe() {
+  if (!running || isAnalyzing) return;
+  isAnalyzing = true;
+  pulseEl.classList.add('active');
+
+  try {
+    const image = captureFrame();
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image, lensIndex })
+    });
+    if (!res.ok) throw new Error(`error ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    updateText(data.lens, data.description);
+    lensIndex++;
+    animateProgress();
+
+  } catch (err) {
+    console.error(err);
+    updateText('error', 'observation failed — retrying');
+  } finally {
+    pulseEl.classList.remove('active');
+    isAnalyzing = false;
+  }
+}
+
+startBtn.addEventListener('click', async () => {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    video.srcObject = stream;
+    await video.play();
+    stage.classList.add('visible');
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    running = true;
+    updateText('—', 'first observation incoming…');
+    setTimeout(() => {
+      observe();
+      intervalId = setInterval(observe, INTERVAL);
+    }, 1500);
+  } catch (err) {
+    alert('Camera access denied or unavailable.');
+  }
+});
+
+stopBtn.addEventListener('click', () => {
+  running = false;
+  clearInterval(intervalId);
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  video.srcObject = null;
+  stage.classList.remove('visible');
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  lensIndex = 0;
+  progressEl.style.width = '0%';
+  pulseEl.classList.remove('active');
+});
+</script>
+</body>
+</html>
