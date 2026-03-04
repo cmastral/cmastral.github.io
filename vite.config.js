@@ -7,6 +7,7 @@ export default defineConfig({
         main: "index.html",
         dreamfields: "src/dreamfields.html",
         askChristina: "src/ask-christina.html",
+        semanticdrift: "src/semantic-drift.html"
       },
     },
   },
