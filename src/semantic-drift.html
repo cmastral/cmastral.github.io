@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>semantic-drift_ — cmastral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='72' x='50' text-anchor='middle' font-family='monospace' font-size='64' font-weight='700' fill='%23ff3c1f'>c</text></svg>">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --fg: #e8e0d0;
+    --accent: #ff3c1f;
+    --accent2: #00ffb3;
+    --muted: #3a3a3a;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-mono: 'Fragment Mono', monospace;
+    --font-body: 'Space Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    cursor: none;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9000;
+    opacity: 0.4;
+  }
+
+  .scanline {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: rgba(0,255,179,0.05);
+    z-index: 8999;
+    pointer-events: none;
+    animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove { from { top: -2px; } to { top: 100vh; } }
+
+  #cursor {
+    position: fixed;
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: difference;
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid var(--fg);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    opacity: 0.5;
+  }
+  body:has(a:hover) #cursor,
+  body:has(button:hover) #cursor { width: 18px; height: 18px; background: var(--accent2); }
+  body:has(a:hover) #cursor-ring,
+  body:has(button:hover) #cursor-ring { width: 56px; height: 56px; border-color: var(--accent2); }
+
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    mix-blend-mode: difference;
+  }
+  .nav-logo {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--fg);
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+  .nav-back {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--fg);
+    text-decoration: none;
+    text-transform: uppercase;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+  }
+  .nav-back:hover { opacity: 1; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 140px 40px 80px;
+  }
+
+  .page-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .page-label::before {
+    content: '';
+    width: 30px; height: 1px;
+    background: var(--accent);
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: clamp(56px, 9vw, 110px);
+    line-height: 0.9;
+    color: var(--fg);
+    margin-bottom: 20px;
+  }
+
+  .page-desc {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.9;
+    color: var(--fg);
+    opacity: 0.5;
+    max-width: 520px;
+    margin-bottom: 60px;
+  }
+
+  /* INPUT */
+  .input-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 48px;
+  }
+  .drift-input {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--muted);
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 14px 18px;
+    outline: none;
+    transition: border-color 0.3s;
+    letter-spacing: 0.04em;
+  }
+  .drift-input::placeholder { color: var(--muted); }
+  .drift-input:focus { border-color: var(--accent2); }
+
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 14px 28px;
+    border: none;
+    cursor: none;
+    transition: background 0.3s, color 0.3s;
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn:hover { background: var(--fg); }
+  .btn:disabled { background: var(--muted); color: #666; }
+
+  /* STATUS */
+  .status-line {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--accent2);
+    margin-bottom: 40px;
+    min-height: 20px;
+    animation: blink 1.2s step-end infinite;
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .status-line:empty { animation: none; }
+
+  /* RESULTS */
+  .results {
+    display: none;
+    gap: 40px;
+  }
+  .results.visible {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* IMAGE PANEL */
+  .image-panel {
+    border: 1px solid var(--muted);
+    overflow: hidden;
+    position: relative;
+  }
+  .image-panel img {
+    width: 100%;
+    display: block;
+  }
+  .image-label {
+    position: absolute;
+    top: 12px; left: 12px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: rgba(0,0,0,0.7);
+    color: var(--muted);
+    padding: 4px 10px;
+    border: 1px solid var(--muted);
+  }
+
+  /* ANALYSIS PANEL */
+  .analysis-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* SCORE */
+  .score-block {
+    border: 1px solid var(--muted);
+    padding: 28px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .score-number {
+    font-family: var(--font-display);
+    font-size: 80px;
+    line-height: 1;
+    color: var(--accent);
+    min-width: 120px;
+    transition: color 0.5s;
+  }
+  .score-number.high { color: var(--accent2); }
+  .score-number.mid { color: #ffcc00; }
+  .score-number.low { color: var(--accent); }
+
+  .score-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .score-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .score-verdict {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--fg);
+    opacity: 0.8;
+  }
+
+  /* SCORE BAR */
+  .score-bar-wrap {
+    height: 2px;
+    background: var(--muted);
+    margin-top: 12px;
+    width: 100%;
+  }
+  .score-bar {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 1s ease, background 0.5s;
+  }
+  .score-bar.high { background: var(--accent2); }
+  .score-bar.mid { background: #ffcc00; }
+
+  /* TAGS */
+  .tag-block {
+    border: 1px solid var(--muted);
+    padding: 24px;
+  }
+  .tag-block-title {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .tag-block-title::before {
+    content: '';
+    width: 16px; height: 1px;
+  }
+  .tag-block.matched .tag-block-title { color: var(--accent2); }
+  .tag-block.matched .tag-block-title::before { background: var(--accent2); }
+  .tag-block.missed .tag-block-title { color: var(--accent); }
+  .tag-block.missed .tag-block-title::before { background: var(--accent); }
+  .tag-block.drifted .tag-block-title { color: #ffcc00; }
+  .tag-block.drifted .tag-block-title::before { background: #ffcc00; }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 5px 12px;
+    border: 1px solid;
+  }
+  .tag-block.matched .tag { border-color: var(--accent2); color: var(--accent2); }
+  .tag-block.missed .tag { border-color: var(--accent); color: var(--accent); }
+  .tag-block.drifted .tag { border-color: #ffcc00; color: #ffcc00; }
+
+  .description-block {
+    border: 1px solid var(--muted);
+    padding: 24px;
+  }
+  .description-block .tag-block-title {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .description-block .tag-block-title::before {
+    content: '';
+    width: 16px; height: 1px;
+    background: var(--muted);
+  }
+  .description-text {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.9;
+    color: var(--fg);
+    opacity: 0.7;
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--muted);
+    padding: 24px 40px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-top: 80px;
+  }
+
+  @media (max-width: 768px) {
+    nav, main, footer { padding-left: 20px; padding-right: 20px; }
+    .results.visible { grid-template-columns: 1fr; }
+    .input-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div class="scanline"></div>
+
+<nav>
+  <a href="/" class="nav-logo">cmastral_</a>
+  <a href="/" class="nav-back">← back</a>
+</nav>
+
+<main>
+  <div class="page-label">Playground / 01</div>
+  <h1 class="page-title">semantic-drift_</h1>
+  <p class="page-desc">Type a prompt. The model generates an image. Then a vision model looks at what was actually produced and scores how much meaning was lost along the way.</p>
+
+  <div class="input-row">
+    <input id="prompt" class="drift-input" placeholder="a red balloon floating above a quiet city at dusk" />
+    <button id="go" class="btn">Analyze</button>
+  </div>
+
+  <div id="status" class="status-line"></div>
+
+  <div id="results" class="results">
+    <div class="image-panel">
+      <img id="output-image" src="" alt="generated image" />
+      <div class="image-label">generated output</div>
+    </div>
+
+    <div class="analysis-panel">
+      <div class="score-block">
+        <div>
+          <div class="score-label">Fidelity Score</div>
+          <div id="score-number" class="score-number">—</div>
+          <div class="score-bar-wrap">
+            <div id="score-bar" class="score-bar"></div>
+          </div>
+        </div>
+        <div class="score-meta">
+          <div id="score-verdict" class="score-verdict"></div>
+        </div>
+      </div>
+
+      <div class="description-block">
+        <div class="tag-block-title">what the model actually sees</div>
+        <div id="description" class="description-text"></div>
+      </div>
+
+      <div id="matched-block" class="tag-block matched">
+        <div class="tag-block-title">matched</div>
+        <div id="matched-tags" class="tags"></div>
+      </div>
+
+      <div id="missed-block" class="tag-block missed">
+        <div class="tag-block-title">missed</div>
+        <div id="missed-tags" class="tags"></div>
+      </div>
+
+      <div id="drifted-block" class="tag-block drifted">
+        <div class="tag-block-title">unexpected</div>
+        <div id="drifted-tags" class="tags"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span>© <span id="footer-year"></span> Christina Mastralexi</span>
+  <span>semantic-drift_</span>
+  <span>cmastral.github.io</span>
+</footer>
+
+<script>
+// CURSOR
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+});
+function animateRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+// LOGIC
+const API = "https://semantic-drift-worker.cmastral.workers.dev/api/analyze";
+
+const promptEl = document.getElementById('prompt');
+const goBtn    = document.getElementById('go');
+const statusEl = document.getElementById('status');
+const resultsEl = document.getElementById('results');
+
+function setStatus(msg) { statusEl.textContent = msg; }
+
+function renderTags(containerId, blockId, items) {
+  const block = document.getElementById(blockId);
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  if (!items || items.length === 0) {
+    block.style.display = 'none';
+    return;
+  }
+  block.style.display = 'block';
+  items.forEach(item => {
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = item;
+    container.appendChild(tag);
+  });
+}
+
+function renderScore(score) {
+  const el = document.getElementById('score-number');
+  const bar = document.getElementById('score-bar');
+  el.textContent = score;
+
+  el.classList.remove('high', 'mid', 'low');
+  bar.classList.remove('high', 'mid');
+
+  if (score >= 70) { el.classList.add('high'); bar.classList.add('high'); }
+  else if (score >= 40) { el.classList.add('mid'); bar.classList.add('mid'); }
+  else { el.classList.add('low'); }
+
+  setTimeout(() => { bar.style.width = score + '%'; }, 100);
+}
+
+goBtn.addEventListener('click', async () => {
+  const prompt = promptEl.value.trim();
+  if (!prompt) return;
+
+  goBtn.disabled = true;
+  resultsEl.classList.remove('visible');
+  setStatus('> generating image…');
+
+  try {
+    setStatus('> generating image… this takes about 20 seconds');
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (!res.ok) throw new Error(`server error ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    setStatus('> analyzing semantic fidelity…');
+
+    const { image, analysis } = data;
+
+    document.getElementById('output-image').src = image;
+    document.getElementById('description').textContent = analysis.description;
+    document.getElementById('score-verdict').textContent = analysis.verdict;
+
+    renderScore(analysis.score);
+    renderTags('matched-tags', 'matched-block', analysis.matched);
+    renderTags('missed-tags', 'missed-block', analysis.missed);
+    renderTags('drifted-tags', 'drifted-block', analysis.drifted);
+
+    setStatus('');
+    resultsEl.classList.add('visible');
+
+  } catch (err) {
+    console.error(err);
+    setStatus('> error: ' + err.message);
+  } finally {
+    goBtn.disabled = false;
+  }
+});
+
+// allow enter key
+promptEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter') goBtn.click();
+});
+</script>
+</body>
+</html>
