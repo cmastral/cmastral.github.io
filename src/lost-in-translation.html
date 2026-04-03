@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>lost in translation_ — cmastral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='72' x='50' text-anchor='middle' font-family='monospace' font-size='64' font-weight='700' fill='%23ff3c1f'>c</text></svg>">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --fg: #e8e0d0;
+    --accent: #ff3c1f;
+    --accent2: #00ffb3;
+    --muted: #2a2a2a;
+    --muted2: #555;
+    --font-display: 'Bebas Neue', sans-serif;
+    
+    --font-mono: 'Fragment Mono', monospace;
+    --font-body: 'Space Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    cursor: none;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9000;
+  }
+  .scanline {
+    position: fixed; top: 0; left: 0; right: 0; height: 2px;
+    background: rgba(0,255,179,0.04);
+    pointer-events: none; z-index: 8999;
+    animation: scan 8s linear infinite;
+  }
+  @keyframes scan { from { top: -2px; } to { top: 100vh; } }
+
+  /* CURSOR */
+  #cursor {
+    position: fixed; width: 9px; height: 9px;
+    background: var(--accent); border-radius: 50%;
+    pointer-events: none; z-index: 9999;
+    transform: translate(-50%,-50%);
+    mix-blend-mode: difference;
+    transition: width .15s, height .15s, background .15s;
+  }
+  #cursor-ring {
+    position: fixed; width: 32px; height: 32px;
+    border: 1px solid rgba(232,224,208,0.25); border-radius: 50%;
+    pointer-events: none; z-index: 9998;
+    transform: translate(-50%,-50%);
+  }
+  body:has(button:hover) #cursor,
+  body:has(a:hover) #cursor,
+  body:has(.example-tag:hover) #cursor { width: 16px; height: 16px; background: var(--accent2); }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 22px 48px;
+    mix-blend-mode: difference;
+  }
+  .nav-logo {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .15em;
+    color: var(--fg); text-decoration: none; text-transform: uppercase;
+  }
+  .nav-back {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .15em;
+    color: var(--fg); text-decoration: none; text-transform: uppercase;
+    opacity: .4; transition: opacity .2s;
+  }
+  .nav-back:hover { opacity: 1; }
+
+  /* PAGE */
+  .page { max-width: 1100px; margin: 0 auto; padding: 120px 48px 100px; }
+
+  /* HEADER */
+  .page-header {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 48px; padding-bottom: 48px;
+    border-bottom: 1px solid var(--muted);
+    margin-bottom: 64px; align-items: end;
+  }
+  .catalog-number {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .25em;
+    color: var(--accent); text-transform: uppercase;
+    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+  }
+  .catalog-number::before { content: ''; width: 28px; height: 1px; background: var(--accent); }
+  .page-title {
+    font-family: var(--font-display);
+    font-size: clamp(56px, 8vw, 110px);
+    line-height: .9; color: var(--fg);
+  }
+  .page-desc {
+    font-family: var(--font-mono); font-size: 12px; line-height: 1.9;
+    color: var(--fg); opacity: 0.5; margin-bottom: 20px;
+  }
+  .page-meta {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--muted2); line-height: 2.2;
+  }
+
+  /* INPUT */
+  .input-block { margin-bottom: 80px; }
+  .input-label {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .25em;
+    text-transform: uppercase; color: var(--muted2); margin-bottom: 12px;
+  }
+  .input-row {
+    display: flex; border: 1px solid var(--muted2); margin-bottom: 14px;
+    transition: border-color .2s;
+  }
+  .input-row:focus-within { border-color: var(--fg); }
+  #prompt-input {
+    flex: 1; background: transparent; border: none;
+    padding: 18px 24px;
+    font-family: var(--font-mono); font-size: 13px;
+    color: var(--fg); outline: none;
+  }
+  #prompt-input::placeholder { color: var(--muted2);  }
+  #run-btn {
+    background: var(--accent); border: none; border-left: 1px solid var(--muted2);
+    color: var(--bg); font-family: var(--font-mono); font-size: 9px;
+    letter-spacing: .2em; text-transform: uppercase;
+    padding: 18px 28px; cursor: none; transition: background .2s; white-space: nowrap;
+  }
+  #run-btn:hover { background: var(--fg); }
+  #run-btn:disabled { background: var(--muted); color: var(--muted2); pointer-events: none; }
+
+  .examples { display: flex; gap: 8px; flex-wrap: wrap; }
+  .example-tag {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em;
+    color: var(--muted2); border: 1px solid var(--muted);
+    padding: 5px 12px; cursor: none; transition: color .2s, border-color .2s;
+  }
+  .example-tag:hover { color: var(--accent2); border-color: var(--accent2); }
+
+  /* ── CHAIN ───────────────────────────────────────────── */
+  #chain-section { display: none; }
+  #chain-section.visible { display: block; }
+
+  /* Origin sentence — full width banner */
+  .origin-banner {
+    border: 1px solid var(--accent2);
+    padding: 32px 40px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .origin-banner.visible { opacity: 1; transform: translateY(0); }
+
+  .origin-label {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .25em;
+    text-transform: uppercase; color: var(--accent2); white-space: nowrap;
+  }
+  .origin-text {
+    font-family: var(--font-mono); font-size: 13px; line-height: 1.8;
+    color: var(--accent2); flex: 1; text-align: center;
+  }
+
+  /* Each cycle: image + description side by side */
+  .cycle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    margin-bottom: 2px;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .cycle.visible { opacity: 1; transform: translateY(0); }
+
+  /* Image panel */
+  .cycle-image {
+    position: relative;
+    overflow: hidden;
+    background: #111;
+    aspect-ratio: 4/3;
+    border: 1px solid var(--muted);
+  }
+  .cycle-image img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    filter: grayscale(.15) contrast(1.05);
+    transition: transform .5s ease, filter .3s;
+  }
+  .cycle-image:hover img { transform: scale(1.03); filter: grayscale(0) contrast(1.05); }
+  .cycle-image-loading {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #111;
+  }
+  .loading-dots span {
+    display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--muted2); margin: 0 3px;
+    animation: dp 1.2s ease-in-out infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: .2s; }
+  .loading-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes dp {
+    0%,80%,100% { transform: scale(.5); opacity: .3; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Description panel */
+  .cycle-text {
+    border: 1px solid var(--muted);
+    background: #0f0f0f;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+    aspect-ratio: 4/3;
+  }
+
+  .cycle-meta {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .cycle-gen {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .25em;
+    text-transform: uppercase; color: var(--muted2);
+  }
+  .cycle-gen-line {
+    flex: 1; height: 1px; background: var(--muted);
+  }
+
+  .cycle-description {
+    font-family: var(--font-mono);
+    font-size: 13px; line-height: 2;
+    color: var(--fg);
+  }
+
+  /* Final sentence — full width */
+  .final-banner {
+    border: 1px solid var(--muted2);
+    padding: 32px 40px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .final-banner.visible { opacity: 1; transform: translateY(0); }
+  .final-label {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .25em;
+    text-transform: uppercase; color: var(--muted2); white-space: nowrap;
+  }
+  .final-text {
+    font-family: var(--font-mono); font-size: 13px; line-height: 1.8;
+    color: var(--fg); opacity: 0.5; flex: 1; text-align: center;
+  }
+
+  /* DRIFT */
+  .drift-row {
+    display: none;
+    border-top: 1px solid var(--muted);
+    padding: 32px 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    margin-top: 8px;
+  }
+  .drift-row.visible { display: flex; }
+
+  .drift-left { flex: 1; }
+  .drift-label {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--muted2); margin-bottom: 6px;
+  }
+  .drift-original {
+    font-family: var(--font-mono); font-size: 11px; color: var(--accent2); margin-bottom: 4px;
+  }
+  .drift-arrow {
+    font-family: var(--font-mono); font-size: 9px; color: var(--muted2);
+    margin: 4px 0;
+  }
+  .drift-final {
+    font-family: var(--font-mono); font-size: 11px; color: var(--fg); opacity: .5;
+  }
+
+  .drift-score-block { text-align: right; }
+  .drift-score-label {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--muted2); margin-bottom: 4px;
+  }
+  .drift-score-value {
+    font-family: var(--font-display); font-size: 80px; line-height: 1;
+    color: var(--accent);
+  }
+  .drift-score-value.high { color: #00c97a; }
+  .drift-score-value.mid  { color: #f5a623; }
+  .drift-score-value.low  { color: var(--accent); }
+  .drift-score-sub {
+    font-family: var(--font-mono); font-size: 8px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted2);
+  }
+
+  /* STATUS */
+  .status-row {
+    display: none; justify-content: space-between; align-items: center;
+    padding: 16px 0; border-top: 1px solid var(--muted); margin-top: 8px;
+  }
+  .status-row.visible { display: flex; }
+  #status-text {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--muted2);
+  }
+  #reset-btn {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .15em;
+    text-transform: uppercase; background: transparent;
+    border: 1px solid var(--muted); color: var(--muted2);
+    padding: 8px 18px; cursor: none; transition: color .2s, border-color .2s;
+  }
+  #reset-btn:hover { color: var(--fg); border-color: var(--fg); }
+
+  footer {
+    border-top: 1px solid var(--muted); padding: 24px 48px;
+    display: flex; justify-content: space-between;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em;
+    color: var(--muted2); max-width: 1100px; margin: 0 auto;
+  }
+
+  @media (max-width: 800px) {
+    .page { padding: 100px 24px 60px; }
+    .page-header { grid-template-columns: 1fr; gap: 24px; }
+    .cycle { grid-template-columns: 1fr; }
+    .cycle-image, .cycle-text { aspect-ratio: auto; min-height: 260px; }
+    nav { padding: 20px 24px; }
+    footer { padding: 20px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div class="scanline"></div>
+
+<nav>
+  <a href="/" class="nav-logo">cmastral_</a>
+  <a href="/" class="nav-back">← back</a>
+</nav>
+
+<div class="page">
+
+  <header class="page-header">
+    <div class="header-left">
+      <div class="catalog-number">Playground / 04</div>
+      <h1 class="page-title">LOST IN<br>TRANSLATION_</h1>
+    </div>
+    <div class="header-right">
+      <p class="page-desc">A sentence enters. A model generates an image. A vision model describes it back. That becomes the next prompt. Watch meaning drift across four generations until almost nothing survives.</p>
+      <div class="page-meta">
+        text → image → text × 4<br>
+        semantic fidelity scored at end
+      </div>
+    </div>
+  </header>
+
+  <div class="input-block">
+    <div class="input-label">Enter a sentence</div>
+    <div class="input-row">
+      <input type="text" id="prompt-input" maxlength="200"
+        placeholder="memory is a room you can never fully leave" />
+      <button id="run-btn">Transmit</button>
+    </div>
+    <div class="examples">
+      <span class="example-tag" data-prompt="a city seen from a taxi window in the rain">a city seen from a taxi window in the rain</span>
+      <span class="example-tag" data-prompt="neon signs reflected in a puddle on an empty street">neon signs reflected in a puddle on an empty street</span>
+      <span class="example-tag" data-prompt="two people swimming in a lake">two people swimming in a lake</span>
+    </div>
+  </div>
+
+  <div id="chain-section">
+    <div id="chain-inner"></div>
+
+    <div class="drift-row" id="drift-row">
+      <div class="drift-left">
+        <div class="drift-label">What was lost</div>
+        <div class="drift-original" id="drift-original">—</div>
+        <div class="drift-arrow">↓ 4 generations</div>
+        <div class="drift-final" id="drift-final">—</div>
+      </div>
+      <div class="drift-score-block">
+        <div class="drift-score-label">Fidelity score</div>
+        <div class="drift-score-value" id="drift-score">—</div>
+        <div class="drift-score-sub">meaning preserved / 100</div>
+      </div>
+    </div>
+
+    <div class="status-row" id="status-row">
+      <span id="status-text">—</span>
+      <button id="reset-btn">Start over</button>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>© <span id="footer-year"></span> Christina Mastralexi</span>
+  <span>lost in translation_</span>
+  <span>cmastral.github.io</span>
+</footer>
+
+<script>
+// ── CURSOR ────────────────────────────────────────────────
+const cursorEl = document.getElementById('cursor');
+const ringEl   = document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e => {
+  mx=e.clientX; my=e.clientY;
+  cursorEl.style.left=mx+'px'; cursorEl.style.top=my+'px';
+});
+function tickRing() {
+  rx+=(mx-rx)*0.1; ry+=(my-ry)*0.1;
+  ringEl.style.left=rx+'px'; ringEl.style.top=ry+'px';
+  requestAnimationFrame(tickRing);
+}
+requestAnimationFrame(tickRing);
+
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+document.querySelectorAll('.example-tag').forEach(t =>
+  t.addEventListener('click', () => document.getElementById('prompt-input').value = t.dataset.prompt)
+);
+
+// ── CONFIG ────────────────────────────────────────────────
+const API = 'https://lost-in-translation-worker.cmastral.workers.dev';
+
+const STEPS = 4;
+
+const promptInput  = document.getElementById('prompt-input');
+const runBtn       = document.getElementById('run-btn');
+const chainSection = document.getElementById('chain-section');
+const chainInner   = document.getElementById('chain-inner');
+const statusRow    = document.getElementById('status-row');
+const statusText   = document.getElementById('status-text');
+const driftRow     = document.getElementById('drift-row');
+const driftScore   = document.getElementById('drift-score');
+const driftOrig    = document.getElementById('drift-original');
+const driftFin     = document.getElementById('drift-final');
+const resetBtn     = document.getElementById('reset-btn');
+
+function setStatus(msg) { statusText.textContent = msg; }
+
+function reveal(el, delay=80) {
+  setTimeout(() => el.classList.add('visible'), delay);
+}
+
+function addOriginBanner(text) {
+  const el = document.createElement('div');
+  el.className = 'origin-banner';
+  el.innerHTML = `<span class="origin-label">origin</span>
+    <span class="origin-text">${text}</span>`;
+  chainInner.appendChild(el);
+  reveal(el);
+}
+
+function addCycle(gen) {
+  const cycle = document.createElement('div');
+  cycle.className = 'cycle';
+  cycle.id = 'cycle-' + gen;
+
+  // Image panel
+  const imgPanel = document.createElement('div');
+  imgPanel.className = 'cycle-image';
+  imgPanel.id = 'img-' + gen;
+  imgPanel.innerHTML = '<div class="cycle-image-loading"><div class="loading-dots"><span></span><span></span><span></span></div></div>';
+
+  // Text panel
+  const textPanel = document.createElement('div');
+  textPanel.className = 'cycle-text';
+  textPanel.innerHTML = `
+    <div class="cycle-meta">
+      <span class="cycle-gen">generation ${gen}</span>
+      <span class="cycle-gen-line"></span>
+    </div>
+    <div class="cycle-description" id="desc-${gen}">
+      <div class="cycle-image-loading" style="position:static;background:transparent;justify-content:flex-start;padding:0">
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>`;
+
+  cycle.appendChild(imgPanel);
+  cycle.appendChild(textPanel);
+  chainInner.appendChild(cycle);
+  reveal(cycle, 100);
+  return { imgPanel, descEl: document.getElementById('desc-' + gen) };
+}
+
+function addFinalBanner(text) {
+  const el = document.createElement('div');
+  el.className = 'final-banner';
+  el.innerHTML = `<span class="final-label">final</span>
+    <span class="final-text">${text}</span>`;
+  chainInner.appendChild(el);
+  reveal(el);
+}
+
+function resolveImage(imgPanel, src) {
+  imgPanel.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = src; img.alt = '';
+  imgPanel.appendChild(img);
+}
+
+function resolveDesc(descEl, text) {
+  descEl.textContent = text;
+}
+
+// ── RUN ───────────────────────────────────────────────────
+async function run() {
+  const prompt = promptInput.value.trim();
+  if (!prompt) return;
+
+  runBtn.disabled = true;
+  chainInner.innerHTML = '';
+  driftRow.classList.remove('visible');
+  driftScore.textContent = '—';
+  chainSection.classList.add('visible');
+  statusRow.classList.add('visible');
+  setStatus('starting…');
+
+  setTimeout(() => chainSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+
+  addOriginBanner(prompt);
+  let current = prompt;
+
+  try {
+    for (let i = 0; i < STEPS; i++) {
+      setStatus('generating image ' + (i+1) + ' of ' + STEPS + '… (may take 20–30s if model is cold)');
+      const { imgPanel, descEl } = addCycle(i + 1);
+
+      // Generate image
+      const ir = await fetch(API + '/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: current })
+      });
+      if (!ir.ok) throw new Error('image generation failed (' + ir.status + ')');
+      const id = await ir.json();
+      if (id.error) throw new Error(id.error);
+      resolveImage(imgPanel, id.image);
+
+      // Describe
+      setStatus('reading image ' + (i+1) + '…');
+      const dr = await fetch(API + '/api/describe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: id.image })
+      });
+      if (!dr.ok) throw new Error('description failed (' + dr.status + ')');
+      const dd = await dr.json();
+      if (dd.error) throw new Error(dd.error);
+
+      resolveDesc(descEl, dd.description);
+      current = dd.description;
+    }
+
+    addFinalBanner(current);
+
+    // Score
+    setStatus('measuring semantic drift…');
+    const sr = await fetch(API + '/api/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ original: prompt, final: current })
+    });
+    const sd = await sr.json();
+    const score = typeof sd.score === 'number' ? sd.score : 0;
+
+    driftOrig.textContent = '"' + prompt + '"';
+    driftFin.textContent  = '"' + current + '"';
+    driftScore.textContent = score;
+    driftScore.className = 'drift-score-value '
+      + (score >= 70 ? 'high' : score >= 40 ? 'mid' : 'low');
+    driftRow.classList.add('visible');
+    setStatus('complete — fidelity ' + score + '/100');
+
+  } catch(err) {
+    console.error(err);
+    setStatus('error: ' + err.message);
+    runBtn.disabled = false;
+  }
+}
+
+runBtn.addEventListener('click', run);
+promptInput.addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
+resetBtn.addEventListener('click', () => {
+  chainInner.innerHTML = '';
+  chainSection.classList.remove('visible');
+  statusRow.classList.remove('visible');
+  driftRow.classList.remove('visible');
+  runBtn.disabled = false;
+  promptInput.value = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+</script>
+</body>
+</html>
