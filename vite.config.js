@@ -8,7 +8,8 @@ export default defineConfig({
         dreamfields: "src/dreamfields.html",
         askChristina: "src/ask-christina.html",
         semanticdrift: "src/semantic-drift.html",
-        mirror: "src/mirror.html"
+        mirror: "src/mirror.html",
+        lostintranslation: "src/lost-in-translation.html"
       },
     },
   },
