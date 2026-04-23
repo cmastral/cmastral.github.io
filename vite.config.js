@@ -9,7 +9,8 @@ export default defineConfig({
         askChristina: "src/ask-christina.html",
         semanticdrift: "src/semantic-drift.html",
         mirror: "src/mirror.html",
-        lostintranslation: "src/lost-in-translation.html"
+        lostintranslation: "src/lost-in-translation.html",
+        readbetweenthelines: "read-between-the-lines.html"
       },
     },
   },
