@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>read between the lines_ — cmastral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='72' x='50' text-anchor='middle' font-family='monospace' font-size='64' font-weight='700' fill='%23ff3c1f'>c</text></svg>">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --fg: #e8e0d0;
+    --accent: #ff3c1f;
+    --accent2: #00ffb3;
+    --muted: #3a3a3a;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-mono: 'Fragment Mono', monospace;
+    --font-body: 'Space Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    cursor: none;
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9000;
+    opacity: 0.4;
+  }
+
+  .scanline {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: rgba(0,255,179,0.05);
+    z-index: 8999;
+    pointer-events: none;
+    animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove { from { top: -2px; } to { top: 100vh; } }
+
+  #cursor {
+    position: fixed;
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: difference;
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid var(--fg);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    opacity: 0.5;
+  }
+
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    mix-blend-mode: difference;
+  }
+  .nav-logo {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--fg);
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+  .nav-back {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--fg);
+    text-decoration: none;
+    text-transform: uppercase;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+  }
+  .nav-back:hover { opacity: 1; }
+
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 140px 40px 80px;
+    flex: 1;
+    width: 100%;
+  }
+
+  .page-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .page-label::before {
+    content: '';
+    width: 30px; height: 1px;
+    background: var(--accent);
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: clamp(64px, 10vw, 120px);
+    line-height: 0.9;
+    color: var(--fg);
+    margin-bottom: 20px;
+  }
+
+  .page-desc {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.9;
+    color: var(--fg);
+    opacity: 0.5;
+    max-width: 480px;
+    margin-bottom: 48px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 60px;
+    align-items: stretch;
+  }
+
+  .sentence-input {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--muted);
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 14px 20px;
+    outline: none;
+    transition: border-color 0.3s;
+    letter-spacing: 0.02em;
+    cursor: none;
+  }
+  .sentence-input::placeholder { color: var(--muted); font-style: italic; }
+  .sentence-input:focus { border-color: var(--fg); }
+
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 14px 28px;
+    border: none;
+    cursor: none;
+    transition: background 0.3s, color 0.3s;
+    background: var(--accent);
+    color: var(--bg);
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--fg); }
+  .btn:disabled { background: var(--muted); color: #555; pointer-events: none; }
+
+  .status {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    min-height: 20px;
+  }
+  .status.loading { color: var(--muted); animation: blink 1.2s ease-in-out infinite; }
+  .status.error { color: var(--accent); }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+  .emotions-grid {
+    display: none;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+  .emotions-grid.visible { display: grid; }
+
+  .emotion-card {
+    border: 1px solid var(--muted);
+    background: #050505;
+    padding: 40px 32px;
+    cursor: none;
+    transition: border-color 0.3s, background 0.3s;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .emotion-card:hover { border-color: var(--fg); background: #0f0f0f; }
+  .emotion-card.playing { border-color: var(--accent2); }
+
+  .emotion-name {
+    font-family: var(--font-display);
+    font-size: 42px;
+    line-height: 1;
+    color: var(--fg);
+    transition: color 0.3s;
+  }
+  .emotion-card.playing .emotion-name { color: var(--accent2); }
+
+  .emotion-indicator {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.3s;
+  }
+  .emotion-card.playing .emotion-indicator { color: var(--accent2); }
+  .emotion-indicator::before {
+    content: '';
+    width: 16px; height: 1px;
+    background: currentColor;
+  }
+
+  .play-hint {
+    position: absolute;
+    bottom: 16px; right: 16px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .emotion-card:hover .play-hint { opacity: 1; }
+  .emotion-card.playing .play-hint { opacity: 1; color: var(--accent2); }
+
+  footer {
+    border-top: 1px solid var(--muted);
+    padding: 24px 40px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-top: 60px;
+  }
+
+  @media (max-width: 768px) {
+    nav, main, footer { padding-left: 20px; padding-right: 20px; }
+    .emotions-grid.visible { grid-template-columns: 1fr; }
+    .input-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div class="scanline"></div>
+
+<nav>
+  <a href="/" class="nav-logo">cmastral_</a>
+  <a href="/" class="nav-back">← back</a>
+</nav>
+
+<main>
+  <div class="page-label">Playground / 03</div>
+  <h1 class="page-title">read between<br>the lines_</h1>
+  <p class="page-desc">type a sentence. the model reads what lives underneath it — three emotional readings, three different voices. the same words, heard differently.</p>
+
+  <div class="input-row">
+    <input
+      id="sentence-input"
+      class="sentence-input"
+      type="text"
+      placeholder="type something you've said or thought…"
+      maxlength="200"
+    />
+    <button id="interpret-btn" class="btn">interpret</button>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <div id="emotions-grid" class="emotions-grid"></div>
+</main>
+
+<footer>
+  <span>© <span id="footer-year"></span> Christina Mastralexi</span>
+  <span>read between the lines_</span>
+  <span>cmastral.github.io</span>
+</footer>
+
+<script>
+  // ── config ────────────────────────────────────────────
+  const WORKER_URL = "https://read-between-the-lines.cmastral.workers.dev";
+  const ELEVENLABS_KEY = "sk_c09a3d239daf33241198e402cd28b73411ce5f8fecd8dcda";
+
+  // ── cursor ────────────────────────────────────────────
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+  function animateRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+  // ── state ─────────────────────────────────────────────
+  const input      = document.getElementById('sentence-input');
+  const btn        = document.getElementById('interpret-btn');
+  const statusEl   = document.getElementById('status');
+  const grid       = document.getElementById('emotions-grid');
+  let currentAudio = null;
+  let currentCard  = null;
+
+  // ── helpers ───────────────────────────────────────────
+  function setStatus(text, type = '') {
+    statusEl.textContent = text;
+    statusEl.className = 'status ' + type;
+  }
+
+  function stopCurrent() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+    if (currentCard) {
+      currentCard.classList.remove('playing');
+      currentCard.querySelector('.emotion-indicator').textContent = 'click to hear';
+      currentCard.querySelector('.play-hint').textContent = '▶ play';
+      currentCard = null;
+    }
+  }
+
+  // ── interpret ─────────────────────────────────────────
+  async function interpret() {
+    const sentence = input.value.trim();
+    if (!sentence) return;
+
+    btn.disabled = true;
+    grid.classList.remove('visible');
+    grid.innerHTML = '';
+    setStatus('reading between the lines…', 'loading');
+    stopCurrent();
+
+    try {
+      const res = await fetch(`${WORKER_URL}/api/interpret`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sentence })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      setStatus('');
+      renderEmotions(data.emotions, sentence);
+
+    } catch (e) {
+      setStatus('interpretation failed — try again', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── render ────────────────────────────────────────────
+  function renderEmotions(emotions, sentence) {
+    grid.innerHTML = '';
+    emotions.forEach(emotion => {
+      const card = document.createElement('div');
+      card.className = 'emotion-card';
+      card.innerHTML = `
+        <div class="emotion-name">${emotion.emotion}</div>
+        <div class="emotion-indicator">click to hear</div>
+        <div class="play-hint">▶ play</div>
+      `;
+      card.addEventListener('click', () => speak(emotion, card, sentence));
+      grid.appendChild(card);
+    });
+    grid.classList.add('visible');
+  }
+
+  // ── speak ─────────────────────────────────────────────
+  async function speak(emotion, card, sentence) {
+    if (card === currentCard) { stopCurrent(); return; }
+    stopCurrent();
+
+    card.classList.add('playing');
+    card.querySelector('.emotion-indicator').textContent = 'loading…';
+    card.querySelector('.play-hint').textContent = '…';
+    currentCard = card;
+
+    try {
+      const res = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${emotion.voice_id}`,
+        {
+          method: 'POST',
+          headers: {
+            'xi-api-key': ELEVENLABS_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: sentence,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: {
+              stability: 0.4,
+              similarity_boost: 0.8,
+              style: 0.5,
+              use_speaker_boost: true
+            }
+          })
+        }
+      );
+
+      if (!res.ok) throw new Error('ElevenLabs error');
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      currentAudio = audio;
+
+      card.querySelector('.emotion-indicator').textContent = 'playing';
+      card.querySelector('.play-hint').textContent = '▐▐ stop';
+
+      audio.play();
+      audio.onended = () => stopCurrent();
+
+    } catch (e) {
+      stopCurrent();
+      setStatus('audio failed — try again', 'error');
+    }
+  }
+
+  // ── events ────────────────────────────────────────────
+  btn.addEventListener('click', interpret);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') interpret(); });
+</script>
+</body>
+</html>
