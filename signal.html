@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>signal_ — cmastral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='72' x='50' text-anchor='middle' font-family='monospace' font-size='64' font-weight='700' fill='%23ff3c1f'>c</text></svg>">
+<style>
+  :root {
+    --bg: #0a0a0a; --fg: #e8e0d0; --accent: #ff3c1f; --accent2: #00ffb3; --muted: #3a3a3a;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-mono: 'Fragment Mono', monospace;
+    --font-body: 'Space Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.6; cursor: none; overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E"); pointer-events: none; z-index: 9000; opacity: 0.4; }
+  .scanline { position: fixed; top: 0; left: 0; right: 0; height: 2px; background: rgba(0,255,179,0.05); z-index: 8999; pointer-events: none; animation: scanMove 8s linear infinite; }
+  @keyframes scanMove { from { top: -2px; } to { top: 100vh; } }
+  #cursor { position: fixed; width: 10px; height: 10px; background: var(--accent); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: width 0.2s, height 0.2s, background 0.2s; mix-blend-mode: difference; }
+  #cursor-ring { position: fixed; width: 36px; height: 36px; border: 1px solid var(--fg); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%, -50%); opacity: 0.5; }
+  body:has(a:hover) #cursor, body:has(button:hover) #cursor { width: 18px; height: 18px; background: var(--accent2); }
+  body:has(a:hover) #cursor-ring, body:has(button:hover) #cursor-ring { width: 56px; height: 56px; border-color: var(--accent2); }
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; mix-blend-mode: difference; }
+  .nav-logo { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.15em; color: var(--fg); text-decoration: none; text-transform: uppercase; }
+  .nav-back { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; color: var(--fg); text-decoration: none; text-transform: uppercase; opacity: 0.5; transition: opacity 0.3s; }
+  .nav-back:hover { opacity: 1; }
+  main { max-width: 1100px; margin: 0 auto; padding: 140px 40px 80px; flex: 1; width: 100%; }
+  .page-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.3em; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .page-label::before { content: ''; width: 30px; height: 1px; background: var(--accent); }
+  .page-title { font-family: var(--font-display); font-size: clamp(64px, 10vw, 120px); line-height: 0.9; color: var(--fg); margin-bottom: 20px; }
+  .page-desc { font-family: var(--font-mono); font-size: 12px; line-height: 1.9; color: var(--fg); opacity: 0.5; max-width: 480px; margin-bottom: 12px; }
+  .privacy-note { font-family: var(--font-mono); font-size: 10px; line-height: 1.8; color: var(--muted); max-width: 480px; margin-bottom: 48px; letter-spacing: 0.04em; }
+  .start-block { display: flex; gap: 12px; margin-bottom: 40px; }
+  .btn { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; padding: 14px 28px; border: none; cursor: none; transition: background 0.3s, color 0.3s; background: var(--accent); color: var(--bg); }
+  .btn:hover { background: var(--fg); }
+  .btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--muted); }
+  .btn.ghost:hover { border-color: var(--fg); }
+  .btn:disabled { background: var(--muted); color: #555; pointer-events: none; }
+  #error-block { display: none; font-family: var(--font-mono); font-size: 11px; line-height: 1.9; color: var(--accent); border: 1px solid var(--accent); padding: 16px 20px; max-width: 480px; margin-bottom: 24px; white-space: pre-line; }
+  #error-block.visible { display: block; }
+  .stage { display: none; }
+  .stage.visible { display: grid; grid-template-columns: 1fr; gap: 2px; }
+  .canvas-wrap { position: relative; border: 1px solid var(--muted); overflow: hidden; background: #050505; aspect-ratio: 4/3; }
+  #signal-canvas { width: 100%; height: 100%; display: block; }
+  .canvas-label { position: absolute; top: 12px; left: 12px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; background: rgba(0,0,0,0.7); color: var(--muted); padding: 4px 10px; border: 1px solid var(--muted); pointer-events: none; }
+  .level-meter { position: absolute; bottom: 12px; right: 12px; display: flex; align-items: center; gap: 8px; pointer-events: none; }
+  .level-meter-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; }
+  .level-bar-track { width: 80px; height: 2px; background: var(--muted); }
+  .level-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.05s linear; }
+  .level-value { font-family: var(--font-mono); font-size: 9px; color: var(--accent); min-width: 28px; text-align: right; }
+  .instruction-bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 40px; margin-top: 24px; padding: 20px 0; border-top: 1px solid var(--muted); }
+  .instruction-item { display: flex; flex-direction: column; gap: 6px; }
+  .instruction-key { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.25em; color: var(--accent); text-transform: uppercase; }
+  .instruction-val { font-family: var(--font-mono); font-size: 11px; color: var(--fg); opacity: 0.6; }
+  .tech-section { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--muted); }
+  .tech-heading { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.3em; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .tech-heading::before { content: ''; width: 30px; height: 1px; background: var(--accent); }
+  .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 48px; max-width: 820px; }
+  .tech-item { display: flex; flex-direction: column; gap: 5px; }
+  .tech-key { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; color: var(--accent2); text-transform: uppercase; }
+  .tech-val { font-family: var(--font-mono); font-size: 11px; color: var(--fg); opacity: 0.45; line-height: 1.8; }
+  footer { border-top: 1px solid var(--muted); padding: 24px 40px; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div class="scanline"></div>
+<nav>
+  <a href="/" class="nav-logo">cmastral_</a>
+  <a href="/" class="nav-back">← back</a>
+</nav>
+<main>
+  <div class="page-label">Playground / 05</div>
+  <h1 class="page-title">signal_</h1>
+  <p class="page-desc">your microphone as a live 3D oscilloscope. the waveform rotates slowly in space — bass drives red, highs drive teal. go quiet and it decays back to a line.</p>
+  <p class="privacy-note">processed entirely on your device. no audio is captured, transmitted, or stored.</p>
+  <div id="error-block"></div>
+  <div class="start-block">
+    <button id="start-btn" class="btn">Start</button>
+    <button id="stop-btn" class="btn ghost" disabled>Stop</button>
+  </div>
+  <div id="stage" class="stage">
+    <div class="canvas-wrap">
+      <canvas id="signal-canvas" width="960" height="720"></canvas>
+      <div class="canvas-label">waveform / live</div>
+      <div class="level-meter">
+        <span class="level-meter-label">level</span>
+        <div class="level-bar-track"><div id="level-bar" class="level-bar-fill"></div></div>
+        <span id="level-value" class="level-value">0%</span>
+      </div>
+    </div>
+    <div class="instruction-bar">
+      <div class="instruction-item"><span class="instruction-key">speak / sing</span><span class="instruction-val">waveform rises and resolves</span></div>
+      <div class="instruction-item"><span class="instruction-key">go quiet</span><span class="instruction-val">field decays back to a line</span></div>
+      <div class="instruction-item"><span class="instruction-key">color</span><span class="instruction-val">bass = red · highs = teal</span></div>
+      <div class="instruction-item"><span class="instruction-key">samples</span><span class="instruction-val">1,024 pts · WebAudio AnalyserNode</span></div>
+    </div>
+  </div>
+  <div class="tech-section">
+    <div class="tech-heading">under the hood</div>
+    <div class="tech-grid">
+      <div class="tech-item">
+        <span class="tech-key">WebAudio API + AnalyserNode</span>
+        <span class="tech-val">microphone input is routed through an AnalyserNode with a 2048-point FFT. getByteTimeDomainData() and getByteFrequencyData() are called every frame to read the live waveform and spectrum.</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-key">Canvas 2D perspective projection</span>
+        <span class="tech-val">each waveform sample is treated as a 3D point, rotated around the Y axis, and projected to screen with a focal-length perspective formula, all in Canvas 2D.</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-key">frequency-driven color</span>
+        <span class="tech-val">bass energy (bins 1–12, ~0–260Hz) drives the red channel. high-frequency energy (bins 150–350, ~3–7kHz) drives teal. the gradient recomputes every frame and follows the 3D rotation.</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-key">decay + persistence</span>
+        <span class="tech-val">a smoothed RMS envelope drives an amplitude decay scalar — loud input snaps to 1 in ~12 frames, silence fades to 0 over ~5 seconds. a semi-transparent fill each frame creates motion trails.</span>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>
+  <span>© <span id="footer-year"></span> Christina Mastralexi</span>
+  <span>signal_</span>
+  <span>cmastral.github.io</span>
+</footer>
+
+<script>
+// ── cursor
+const cursor = document.getElementById('cursor');
+const ring   = document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx+'px';cursor.style.top=my+'px';});
+(function loop(){rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop);})();
+document.getElementById('footer-year').textContent=new Date().getFullYear();
+
+// ── constants
+const CW=960, CH=720, CX=CW/2, CY=CH/2;
+const FOCAL=580, WAVE_SPAN=800, AMP=210, ROT_SPEED=0.007, N=1024;
+
+// ── state
+let audioCtx=null, analyser=null, micStream=null;
+let running=false, rafId=null;
+let rotY=0, decayScale=0;
+const timeBuf=new Uint8Array(N);
+const freqBuf=new Uint8Array(N/2);
+
+// ── canvas
+const canvas=document.getElementById('signal-canvas');
+const ctx=canvas.getContext('2d');
+
+function lerp(a,b,t){return a+(b-a)*t;}
+
+function strokeWave(cosR,sinR,decay){
+  ctx.beginPath();
+  for(let i=0;i<N;i++){
+    const x3d=(i/(N-1)-0.5)*WAVE_SPAN;
+    const y3d=((timeBuf[i]/128)-1)*AMP*decay;
+    const zR=x3d*sinR;
+    const sc=FOCAL/(FOCAL+zR);
+    const sx=CX+(x3d*cosR)*sc;
+    const sy=CY+y3d*sc;
+    i===0?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+  }
+  ctx.stroke();
+}
+
+function frame(){
+  if(!running)return;
+  rafId=requestAnimationFrame(frame);
+
+  analyser.getByteTimeDomainData(timeBuf);
+  analyser.getByteFrequencyData(freqBuf);
+
+  // RMS level
+  let rms=0;
+  for(let i=0;i<N;i++){const v=(timeBuf[i]/128)-1;rms+=v*v;}
+  rms=Math.sqrt(rms/N);
+  const level=Math.min(1,rms*6);
+
+  // Decay envelope — fast attack, slow release
+  decayScale+=(( rms>0.012?1:0)-decayScale)*(rms>0.012?0.09:0.008);
+
+  // UI meter
+  const pct=Math.round(level*100);
+  document.getElementById('level-bar').style.width=pct+'%';
+  document.getElementById('level-value').textContent=pct+'%';
+  // level bar color tracks spectrum
+  document.querySelector('.level-bar-fill').style.background=
+    `hsl(${lerp(5,165,Math.min(1,level*2))},100%,60%)`;
+
+  // Rotate
+  rotY+=ROT_SPEED;
+  const cosR=Math.cos(rotY);
+  const sinR=Math.sin(rotY);
+
+  // Trail
+  ctx.fillStyle='rgba(5,5,5,0.28)';
+  ctx.fillRect(0,0,CW,CH);
+
+  // Spectral energy
+  let bassE=0,highsE=0;
+  for(let i=1;i<12;i++)bassE+=freqBuf[i];
+  for(let i=150;i<350;i++)highsE+=freqBuf[i];
+  const bass =Math.min(1,Math.pow(bassE /(12*160),0.55));
+  const highs=Math.min(1,Math.pow(highsE/(200*45),0.55));
+
+  // Zero-line ghost — always visible so canvas isn't empty when silent
+  ctx.strokeStyle='rgba(58,58,58,0.5)';
+  ctx.lineWidth=1;
+  ctx.shadowBlur=0;
+  strokeWave(cosR,sinR,0);
+
+  // Gradient that follows the 3D rotation
+  const halfSpan=WAVE_SPAN/2;
+  const lSx=CX+(-halfSpan*cosR)*FOCAL/(FOCAL+(-halfSpan*sinR));
+  const rSx=CX+( halfSpan*cosR)*FOCAL/(FOCAL+( halfSpan*sinR));
+  const alpha=Math.max(0.5,0.55+level*0.45);
+  const grad=ctx.createLinearGradient(lSx,CY,rSx,CY);
+  grad.addColorStop(0,  `rgba(255,${Math.round(60+bass*120)},31,${alpha})`);
+  grad.addColorStop(0.5,`rgba(180,160,120,${alpha*0.7})`);
+  grad.addColorStop(1,  `rgba(0,255,${Math.round(130+highs*49)},${alpha})`);
+
+  // Outer glow pass
+  ctx.strokeStyle=`rgba(${highs>bass?'0,255,179':'255,60,31'},0.12)`;
+  ctx.lineWidth=8+level*10;
+  ctx.shadowBlur=0;
+  strokeWave(cosR,sinR,decayScale);
+
+  // Main line
+  ctx.shadowBlur=8+level*16;
+  ctx.shadowColor=highs>bass?'#00ffb3':'#ff3c1f';
+  ctx.strokeStyle=grad;
+  ctx.lineWidth=1.5+level*1.5;
+  ctx.lineJoin='round';
+  strokeWave(cosR,sinR,decayScale);
+  ctx.shadowBlur=0;
+}
+
+// ── UI
+const startBtn  =document.getElementById('start-btn');
+const stopBtn   =document.getElementById('stop-btn');
+const stage     =document.getElementById('stage');
+const errorBlock=document.getElementById('error-block');
+
+function showError(msg){errorBlock.textContent=msg;errorBlock.classList.add('visible');}
+function clearError(){errorBlock.classList.remove('visible');}
+
+startBtn.addEventListener('click',async()=>{
+  clearError();
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+  }catch(e){showError('Microphone access denied.');return;}
+
+  audioCtx=new AudioContext();
+  analyser=audioCtx.createAnalyser();
+  analyser.fftSize=N*2;          // 2048 → frequencyBinCount = 1024
+  analyser.smoothingTimeConstant=0.82;
+
+  const src=audioCtx.createMediaStreamSource(micStream);
+  src.connect(analyser);
+
+  // Seed canvas background
+  ctx.fillStyle='#050505';
+  ctx.fillRect(0,0,CW,CH);
+
+  stage.classList.add('visible');
+  startBtn.disabled=true;stopBtn.disabled=false;
+  running=true;rafId=requestAnimationFrame(frame);
+});
+
+stopBtn.addEventListener('click',()=>{
+  running=false;
+  if(rafId)cancelAnimationFrame(rafId);
+  if(micStream)micStream.getTracks().forEach(t=>t.stop());
+  if(audioCtx)audioCtx.close();
+  micStream=null;audioCtx=null;analyser=null;
+  decayScale=0;rotY=0;
+  ctx.fillStyle='#050505';ctx.fillRect(0,0,CW,CH);
+  stage.classList.remove('visible');
+  startBtn.disabled=false;stopBtn.disabled=true;
+  document.getElementById('level-bar').style.width='0%';
+  document.getElementById('level-value').textContent='0%';
+});
+</script>
+</body>
+</html>
