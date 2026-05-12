@@ -34,7 +34,6 @@
     flex-direction: column;
   }
 
-  /* NOISE */
   body::before {
     content: '';
     position: fixed;
@@ -45,7 +44,6 @@
     opacity: 0.4;
   }
 
-  /* SCANLINE */
   .scanline {
     position: fixed;
     top: 0; left: 0; right: 0;
@@ -55,12 +53,8 @@
     pointer-events: none;
     animation: scanMove 8s linear infinite;
   }
-  @keyframes scanMove {
-    from { top: -2px; }
-    to { top: 100vh; }
-  }
+  @keyframes scanMove { from { top: -2px; } to { top: 100vh; } }
 
-  /* CURSOR */
   #cursor {
     position: fixed;
     width: 10px; height: 10px;
@@ -87,7 +81,6 @@
   body:has(a:hover) #cursor-ring,
   body:has(button:hover) #cursor-ring { width: 56px; height: 56px; border-color: var(--accent2); }
 
-  /* NAV */
   nav {
     position: fixed;
     top: 0; left: 0; right: 0;
@@ -118,7 +111,6 @@
   }
   .nav-back:hover { opacity: 1; }
 
-  /* MAIN */
   main {
     max-width: 860px;
     margin: 0 auto;
@@ -129,7 +121,6 @@
     flex-direction: column;
   }
 
-  /* HEADER */
   .page-label {
     font-family: var(--font-mono);
     font-size: 10px;
@@ -141,11 +132,7 @@
     gap: 16px;
     margin-bottom: 20px;
   }
-  .page-label::before {
-    content: '';
-    width: 30px; height: 1px;
-    background: var(--accent);
-  }
+  .page-label::before { content: ''; width: 30px; height: 1px; background: var(--accent); }
 
   .page-title {
     font-family: var(--font-display);
@@ -165,14 +152,13 @@
     margin-bottom: 48px;
   }
 
-  /* CHAT PANEL */
+  /* ── CHAT PANEL ─────────────────────────────────────────────── */
   .panel {
     border: 1px solid var(--muted);
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-height: 460px;
-    max-height: 600px;
+    min-height: 380px;
+    max-height: 480px;
   }
 
   #chat {
@@ -229,7 +215,6 @@
     color: var(--bg);
   }
 
-  /* THINKING */
   #thinking {
     font-family: var(--font-mono);
     font-size: 11px;
@@ -239,12 +224,8 @@
     min-height: 24px;
     animation: blink 1s step-end infinite;
   }
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-  /* FORM */
   #form {
     display: flex;
     border-top: 1px solid var(--muted);
@@ -277,8 +258,102 @@
     transition: background 0.2s;
   }
   #form button:hover { background: var(--fg); }
+  #form button:disabled { opacity: 0.4; }
 
-  /* FOOTER */
+  /* ── TRACE PANEL ────────────────────────────────────────────── */
+  #trace-panel {
+    margin-top: 12px;
+    border: 1px solid var(--muted);
+    border-left: 2px solid #1a1a1a;
+    transition: border-color 0.3s;
+  }
+  #trace-panel.active { border-left-color: var(--accent2); }
+
+  #trace-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid transparent;
+    cursor: none;
+    user-select: none;
+  }
+  #trace-panel.open #trace-header { border-bottom-color: var(--muted); }
+
+  .trace-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  #trace-panel.active .trace-label { color: var(--accent2); }
+
+  #trace-toggle {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    background: none;
+    border: 1px solid var(--muted);
+    color: var(--muted);
+    padding: 3px 10px;
+    cursor: none;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  #trace-toggle:hover { color: var(--fg); border-color: var(--fg); }
+  #trace-panel.active #trace-toggle { color: var(--accent2); border-color: var(--accent2); }
+
+  #trace-log {
+    display: none;
+    padding: 16px;
+    max-height: 260px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted) transparent;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.7;
+  }
+  #trace-panel.open #trace-log { display: block; }
+
+  .trace-step {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+    animation: traceFadeIn 0.2s ease;
+  }
+  @keyframes traceFadeIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; } }
+
+  .trace-arrow {
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+
+  .trace-step.call .trace-arrow { color: var(--accent2); }
+  .trace-step.result .trace-arrow { color: var(--muted); }
+  .trace-step.thought .trace-arrow { color: var(--accent); opacity: 0.6; }
+  .trace-step.err .trace-arrow { color: var(--accent); }
+
+  .trace-step .trace-name {
+    color: var(--accent2);
+    opacity: 0.9;
+  }
+  .trace-step .trace-args {
+    color: var(--muted);
+  }
+  .trace-step .trace-summary {
+    color: var(--fg);
+    opacity: 0.45;
+    font-size: 10px;
+  }
+  .trace-step.thought .trace-summary {
+    color: var(--fg);
+    opacity: 0.55;
+    font-style: italic;
+  }
+
+  /* ── FOOTER ─────────────────────────────────────────────────── */
   footer {
     border-top: 1px solid var(--muted);
     padding: 24px 40px;
@@ -308,107 +383,242 @@
 </nav>
 
 <main>
-  <div class="page-label">Playground / 00</div>
+  <div class="page-label">Agentic AI / 00</div>
   <h1 class="page-title">ask_christina()</h1>
-  <p class="page-desc">a small agent that only knows my CV, research, and projects. ask about my background, skills, or what i've been working on. sometimes it will tell you to email me.</p>
+  <p class="page-desc">a CV-aware agent using the Anthropic API and Claude Sonnet's native tool calling. Claude decides which tools to call, the worker executes them, and the loop repeats until it can answer. expand the trace to see it.</p>
 
   <div class="panel">
     <div id="chat"></div>
     <div id="thinking"></div>
     <form id="form">
-      <input id="input" placeholder="ask about my background, skills, projects…" autocomplete="off" />
-      <button type="submit">send</button>
+      <input id="input" placeholder="ask about her background, projects, skills…" autocomplete="off" />
+      <button type="submit" id="send-btn">send</button>
     </form>
+  </div>
+
+  <div id="trace-panel">
+    <div id="trace-header" onclick="toggleTrace()">
+      <span class="trace-label">// agent trace</span>
+      <button id="trace-toggle">show</button>
+    </div>
+    <div id="trace-log"></div>
   </div>
 </main>
 
 <footer>
   <span>© <span id="footer-year"></span> Christina Mastralexi</span>
-  <span>ask_christina()</span>
-  <span>cmastral.github.io</span>
+  <span>claude-sonnet-4-6 · tool_use · SSE</span>
 </footer>
 
 <script>
-// CURSOR
+// ── CURSOR ────────────────────────────────────────────────────────────────────
 const cursor = document.getElementById('cursor');
-const ring = document.getElementById('cursor-ring');
+const ring   = document.getElementById('cursor-ring');
 let mx = 0, my = 0, rx = 0, ry = 0;
 document.addEventListener('mousemove', e => {
   mx = e.clientX; my = e.clientY;
   cursor.style.left = mx + 'px';
-  cursor.style.top = my + 'px';
+  cursor.style.top  = my + 'px';
 });
 function animateRing() {
   rx += (mx - rx) * 0.12;
   ry += (my - ry) * 0.12;
   ring.style.left = rx + 'px';
-  ring.style.top = ry + 'px';
+  ring.style.top  = ry + 'px';
   requestAnimationFrame(animateRing);
 }
 animateRing();
 
 document.getElementById('footer-year').textContent = new Date().getFullYear();
 
-// ---- ASK CHRISTINA LOGIC (unchanged) ----
-const API = "https://cv-agent-worker.cmastral.workers.dev/api/agent/ask";
+// ── TRACE TOGGLE ──────────────────────────────────────────────────────────────
+let traceOpen = false;
+function toggleTrace() {
+  traceOpen = !traceOpen;
+  const panel = document.getElementById('trace-panel');
+  const btn   = document.getElementById('trace-toggle');
+  panel.classList.toggle('open', traceOpen);
+  btn.textContent = traceOpen ? 'hide' : 'show';
+}
 
-const chatEl     = document.getElementById("chat");
-const formEl     = document.getElementById("form");
-const inputEl    = document.getElementById("input");
-const thinkingEl = document.getElementById("thinking");
+// ── AGENT UI ─────────────────────────────────────────────────────────────────
+const API       = "https://cv-agent-worker.cmastral.workers.dev/api/agent/ask";
+const chatEl    = document.getElementById('chat');
+const formEl    = document.getElementById('form');
+const inputEl   = document.getElementById('input');
+const thinkEl   = document.getElementById('thinking');
+const traceLog  = document.getElementById('trace-log');
+const tracePanel= document.getElementById('trace-panel');
+const sendBtn   = document.getElementById('send-btn');
 
 let history = [];
 
 function addMessage(role, content) {
-  const row = document.createElement("div");
-  row.className = "row " + role;
-  const bubble = document.createElement("div");
-  bubble.className = "bubble";
+  const row    = document.createElement('div');
+  row.className = 'row ' + role;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
   bubble.textContent = content;
   row.appendChild(bubble);
   chatEl.appendChild(row);
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
-function setThinking(on) {
-  thinkingEl.textContent = on ? "> let me think…" : "";
+function setThinking(text) {
+  thinkEl.textContent = text ? '> ' + text : '';
 }
 
-formEl.addEventListener("submit", async (e) => {
+function clearTrace() {
+  traceLog.innerHTML = '';
+  tracePanel.classList.remove('active');
+}
+
+function addTraceStep(type, content) {
+  tracePanel.classList.add('active');
+
+  const step = document.createElement('div');
+  step.className = 'trace-step ' + type;
+
+  const arrow = document.createElement('span');
+  arrow.className = 'trace-arrow';
+
+  const body = document.createElement('span');
+
+  if (type === 'call') {
+    arrow.textContent = '→';
+    const args = Object.entries(content.input || {})
+      .map(([k, v]) => `${k}: "${v}"`)
+      .join(', ');
+    body.innerHTML = `<span class="trace-name">${content.name}</span><span class="trace-args">(${args})</span>`;
+  } else if (type === 'result') {
+    arrow.textContent = '←';
+    // Summarise the result — show first meaningful field
+    let summary = '';
+    const r = content.result;
+    if (r && r.results && Array.isArray(r.results)) {
+      summary = r.results.map(d => d.title).join(', ');
+    } else if (r && r.skills) {
+      summary = r.skills.slice(0, 4).join(', ') + (r.skills.length > 4 ? '…' : '');
+    } else if (r && r.example) {
+      summary = r.example.slice(0, 80) + '…';
+    } else if (r && r.readme) {
+      summary = 'README (' + r.readme.length + ' chars)';
+    } else if (r && r.error) {
+      summary = '⚠ ' + r.error.slice(0, 60);
+    } else if (r && r.note) {
+      summary = r.note.slice(0, 80);
+    } else {
+      summary = JSON.stringify(r).slice(0, 80);
+    }
+    body.innerHTML = `<span class="trace-name">${content.name}</span> <span class="trace-summary">← ${summary}</span>`;
+  } else if (type === 'thought') {
+    arrow.textContent = '∙';
+    body.innerHTML = `<span class="trace-summary">${content.text.slice(0, 120)}${content.text.length > 120 ? '…' : ''}</span>`;
+  } else if (type === 'err') {
+    arrow.textContent = '✕';
+    body.innerHTML = `<span style="color:var(--accent)">${content.message}</span>`;
+  }
+
+  step.appendChild(arrow);
+  step.appendChild(body);
+  traceLog.appendChild(step);
+  traceLog.scrollTop = traceLog.scrollHeight;
+}
+
+// ── SSE STREAM CONSUMER ───────────────────────────────────────────────────────
+async function streamAgent(question) {
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, history })
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`HTTP ${res.status}: ${err}`);
+  }
+
+  const reader  = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let answer = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split('\n\n');
+    buffer = parts.pop();
+
+    for (const part of parts) {
+      if (!part.startsWith('data: ')) continue;
+      let evt;
+      try { evt = JSON.parse(part.slice(6)); } catch { continue; }
+
+      if (evt.type === 'thought') {
+        setThinking('thinking…');
+        addTraceStep('thought', { text: evt.content });
+        if (!traceOpen) { traceOpen = true; document.getElementById('trace-panel').classList.add('open'); document.getElementById('trace-toggle').textContent = 'hide'; }
+
+      } else if (evt.type === 'tool_call') {
+        setThinking(evt.name + '()');
+        addTraceStep('call', { name: evt.name, input: evt.input });
+        if (!traceOpen) { traceOpen = true; document.getElementById('trace-panel').classList.add('open'); document.getElementById('trace-toggle').textContent = 'hide'; }
+
+      } else if (evt.type === 'tool_result') {
+        addTraceStep('result', { name: evt.name, result: evt.content });
+
+      } else if (evt.type === 'answer') {
+        setThinking('');
+        answer = evt.content;
+        addMessage('assistant', answer);
+
+      } else if (evt.type === 'error') {
+        setThinking('');
+        addTraceStep('err', { message: evt.message });
+        addMessage('assistant', 'something went wrong on my end — try again or email christina at xristinamst@gmail.com.');
+
+      } else if (evt.type === 'done') {
+        break;
+      }
+    }
+  }
+
+  return answer;
+}
+
+// ── FORM HANDLER ──────────────────────────────────────────────────────────────
+formEl.addEventListener('submit', async (e) => {
   e.preventDefault();
   const q = inputEl.value.trim();
   if (!q) return;
 
-  addMessage("user", q);
-  history.push({ role: "user", content: q });
-  inputEl.value = "";
-  setThinking(true);
+  addMessage('user', q);
+  history.push({ role: 'user', content: q });
+  inputEl.value = '';
+  inputEl.disabled = true;
+  sendBtn.disabled = true;
+  setThinking('planning…');
+  clearTrace();
 
   try {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: q, history })
-    });
-    const data = await res.json();
-    setThinking(false);
-
-    if (!res.ok || !data.answer) {
-      console.error("error:", data);
-      addMessage("assistant", "something glitched on my side. maybe try again – or email christina at xristinamst@gmail.com.");
-      return;
-    }
-
-    history.push({ role: "assistant", content: data.answer });
-    addMessage("assistant", data.answer);
+    const answer = await streamAgent(q);
+    if (answer) history.push({ role: 'assistant', content: answer });
   } catch (err) {
+    setThinking('');
+    addMessage('assistant', 'network error — are we offline? you can always email christina at xristinamst@gmail.com.');
     console.error(err);
-    setThinking(false);
-    addMessage("assistant", "network error – are we offline? you can always email christina at xristinamst@gmail.com.");
+  } finally {
+    setThinking('');
+    inputEl.disabled = false;
+    sendBtn.disabled = false;
+    inputEl.focus();
   }
 });
 
-addMessage("assistant", "hi, i'm a small agent that knows christina's CV, research, and projects. ask me about her background, skills, or where her work is heading.");
+// ── SEED ──────────────────────────────────────────────────────────────────────
+addMessage('assistant', "hi — i'm a ReAct agent that knows christina's CV, research, and projects. i plan, retrieve, and construct answers using real tools. ask me anything.");
 </script>
 </body>
 </html>
