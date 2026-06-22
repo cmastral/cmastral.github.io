@@ -637,7 +637,6 @@ async function startIngestion() {
 
   const res = await fetch(`${API}/ingest?session_id=${sessionId}`, {
     method: 'POST',
-    credentials: 'include',
   });
 
   if (!res.ok) {
@@ -723,7 +722,6 @@ async function handleQuery(e) {
   try {
     const res = await fetch(`${API}/query`, {
       method: 'POST',
-      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: q, session_id: sessionId, filters: {} }),
     });
