@@ -617,12 +617,17 @@ function startAuth() {
 (function checkSession() {
   const params = new URLSearchParams(window.location.search);
   const sid    = params.get('session_id');
+  const err    = params.get('error');
+  window.history.replaceState({}, '', window.location.pathname);
+
   if (sid) {
     sessionId = sid;
-    // Clean URL
-    window.history.replaceState({}, '', window.location.pathname);
     setState('ingest');
     startIngestion();
+  } else if (err) {
+    const btn = document.getElementById('connect-btn');
+    btn.insertAdjacentHTML('afterend',
+      '<p style="font-family:var(--font-mono);font-size:11px;color:#ff4444;margin-top:16px;">connection failed — try again</p>');
   }
 })();
 
