@@ -669,7 +669,7 @@ async function startIngestion() {
       } else if (evt.type === 'enriching') {
         addTraceLine(`enriching ${evt.artist} (${evt.progress}/${evt.total})…`);
       } else if (evt.type === 'enriching_track') {
-        if (evt.progress === 1) addTraceLine(`enriching ${evt.total} tracks…`);
+        addTraceLine(`enriching ${evt.track} (${evt.progress}/${evt.total})…`);
       } else if (evt.type === 'embedding') {
         addTraceLine('embedding chunks…');
       } else if (evt.type === 'indexing') {
