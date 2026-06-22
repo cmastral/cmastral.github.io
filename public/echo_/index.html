@@ -916,9 +916,13 @@ function renderGraph(nodes) {
   for (const n of mapNodes) {
     mapCtx.beginPath();
     mapCtx.arc(n.sx, n.sy, n.r, 0, Math.PI * 2);
-    mapCtx.fillStyle = n.type === 'artist'
-      ? 'rgba(200,245,66,0.9)'
-      : 'rgba(200,245,66,0.35)';
+    if (n.source === 'discovery') {
+      mapCtx.fillStyle = 'rgba(232,224,208,0.7)'; // off-white — not yet in your library
+    } else {
+      mapCtx.fillStyle = n.type === 'artist'
+        ? 'rgba(200,245,66,0.9)'
+        : 'rgba(200,245,66,0.35)';
+    }
     mapCtx.fill();
   }
 }
@@ -935,7 +939,8 @@ mapCanvas.addEventListener('mousemove', e => {
   }
 
   if (closest) {
-    mapTooltip.textContent = closest.name + (closest.mood_tags.length ? ' — ' + closest.mood_tags.join(', ') : '');
+    const tag = closest.source === 'discovery' ? ' (new)' : '';
+    mapTooltip.textContent = closest.name + tag + (closest.mood_tags.length ? ' — ' + closest.mood_tags.join(', ') : '');
     mapTooltip.style.display = 'block';
     mapTooltip.style.left = (e.clientX + 12) + 'px';
     mapTooltip.style.top  = (e.clientY + 12) + 'px';
