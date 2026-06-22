@@ -498,6 +498,9 @@
 
   <!-- ── State: Query ────────────────────────────────────────── -->
   <div id="state-query" class="state">
+    <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+      <button id="map-btn" class="sources-toggle" onclick="loadGraph()">map →</button>
+    </div>
     <div class="panel">
       <div id="response-area"></div>
       <div id="thinking"></div>
@@ -505,6 +508,19 @@
         <input id="query-input" placeholder="what does my music say about me…" autocomplete="off" />
         <button type="submit" id="send-btn">ask</button>
       </form>
+    </div>
+  </div>
+
+  <!-- ── State: Semantic Map ──────────────────────────────────── -->
+  <div id="state-map" class="state">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <span class="trace-label">// semantic map</span>
+      <button class="sources-toggle" onclick="setState('query')">← back to chat</button>
+    </div>
+    <div class="panel" style="min-height:480px; max-height:480px; position:relative;">
+      <canvas id="map-canvas" width="800" height="460" style="width:100%; height:460px; display:block;"></canvas>
+      <div id="map-tooltip" style="display:none; position:fixed; font-family:var(--font-mono); font-size:10px; letter-spacing:0.05em; color:var(--bg); background:var(--accent); padding:4px 8px; pointer-events:none; z-index:200; max-width:220px;"></div>
+      <div id="map-empty" style="display:none; font-family:var(--font-mono); font-size:11px; color:var(--muted2); text-align:center; padding-top:200px;">loading map…</div>
     </div>
   </div>
 
@@ -847,6 +863,92 @@ function toggleHood() {
   document.getElementById('hood-panel').classList.toggle('open', hoodOpen);
   document.getElementById('hood-toggle').textContent = hoodOpen ? 'hide' : 'show';
 }
+
+// ── Semantic map ──────────────────────────────────────────────────────────────
+const mapCanvas  = document.getElementById('map-canvas');
+const mapCtx      = mapCanvas.getContext('2d');
+const mapTooltip  = document.getElementById('map-tooltip');
+const mapEmpty    = document.getElementById('map-empty');
+let mapNodes      = [];
+
+async function loadGraph() {
+  setState('map');
+  mapEmpty.style.display = 'block';
+  mapEmpty.textContent   = 'loading map…';
+  mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+
+  try {
+    const res = await fetch(`${API}/graph?session_id=${sessionId}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    if (!data.nodes || data.nodes.length === 0) {
+      mapEmpty.textContent = 'not enough data to map yet.';
+      return;
+    }
+
+    mapEmpty.style.display = 'none';
+    renderGraph(data.nodes);
+  } catch (err) {
+    mapEmpty.textContent = 'failed to load map — ' + err.message;
+  }
+}
+
+function renderGraph(nodes) {
+  const w = mapCanvas.width, h = mapCanvas.height, pad = 40;
+  const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rangeX = (maxX - minX) || 1, rangeY = (maxY - minY) || 1;
+
+  const sx = x => pad + (x - minX) / rangeX * (w - pad * 2);
+  const sy = y => pad + (y - minY) / rangeY * (h - pad * 2);
+
+  mapCtx.clearRect(0, 0, w, h);
+
+  mapNodes = nodes.map(n => ({
+    ...n,
+    sx: sx(n.x),
+    sy: sy(n.y),
+    r: n.type === 'artist' ? Math.max(3, 8 - n.affinity_rank / 8) : 2.5,
+  }));
+
+  for (const n of mapNodes) {
+    mapCtx.beginPath();
+    mapCtx.arc(n.sx, n.sy, n.r, 0, Math.PI * 2);
+    mapCtx.fillStyle = n.type === 'artist'
+      ? 'rgba(200,245,66,0.9)'
+      : 'rgba(200,245,66,0.35)';
+    mapCtx.fill();
+  }
+}
+
+mapCanvas.addEventListener('mousemove', e => {
+  const rect = mapCanvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (mapCanvas.width / rect.width);
+  const my = (e.clientY - rect.top) * (mapCanvas.height / rect.height);
+
+  let closest = null, minDist = 14;
+  for (const n of mapNodes) {
+    const d = Math.hypot(n.sx - mx, n.sy - my);
+    if (d < minDist) { closest = n; minDist = d; }
+  }
+
+  if (closest) {
+    mapTooltip.textContent = closest.name + (closest.mood_tags.length ? ' — ' + closest.mood_tags.join(', ') : '');
+    mapTooltip.style.display = 'block';
+    mapTooltip.style.left = (e.clientX + 12) + 'px';
+    mapTooltip.style.top  = (e.clientY + 12) + 'px';
+    mapCanvas.style.cursor = 'pointer';
+  } else {
+    mapTooltip.style.display = 'none';
+    mapCanvas.style.cursor = 'default';
+  }
+});
+
+mapCanvas.addEventListener('mouseleave', () => {
+  mapTooltip.style.display = 'none';
+});
 </script>
 </body>
 </html>
