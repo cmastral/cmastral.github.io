@@ -664,6 +664,8 @@ async function startIngestion() {
 
       if (evt.type === 'fetching') {
         addTraceLine(evt.message);
+      } else if (evt.type === 'enriching_start') {
+        addTraceLine(evt.message);
       } else if (evt.type === 'enriching') {
         addTraceLine(`enriching ${evt.artist} (${evt.progress}/${evt.total})…`);
       } else if (evt.type === 'enriching_track') {
