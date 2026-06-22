@@ -12,7 +12,8 @@ export default defineConfig({
         lostintranslation: "src/lost-in-translation.html",
         readbetweenthelines: "read-between-the-lines.html",
         presence: "presence.html",
-        signal: "signal.html"
+        signal: "signal.html",
+        echo: "src/echo_/echo.html",
       },
     },
   },

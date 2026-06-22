@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# echo_ backend lives in its own repo, deployed to Hugging Face Spaces
+echo_/backend/
+echo_/.env.example
+echo_/render.yaml
+echo_/railway.toml
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

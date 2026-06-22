@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='72' x='50' text-anchor='middle' font-family='monospace' font-size='64' font-weight='700' fill='%23c8f542'>e</text></svg>">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>echo_ — cmastral</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0a0a0a;
+      --fg:       #e8e0d0;
+      --accent:   #c8f542;
+      --muted:    #3a3a3a;
+      --muted2:   #555;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-mono:    'Fragment Mono', monospace;
+      --font-body:    'Space Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.6;
+      cursor: none;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9000;
+      opacity: 0.4;
+    }
+
+    .scanline {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: rgba(200, 245, 66, 0.04);
+      z-index: 8999;
+      pointer-events: none;
+      animation: scanMove 8s linear infinite;
+    }
+    @keyframes scanMove { from { top: -2px; } to { top: 100vh; } }
+
+    #cursor {
+      position: fixed;
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s, height 0.2s;
+      mix-blend-mode: difference;
+    }
+    #cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1px solid var(--fg);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      opacity: 0.5;
+    }
+    body:has(a:hover) #cursor,
+    body:has(button:hover) #cursor { width: 18px; height: 18px; }
+    body:has(a:hover) #cursor-ring,
+    body:has(button:hover) #cursor-ring { width: 56px; height: 56px; border-color: var(--accent); }
+
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      mix-blend-mode: difference;
+    }
+    .nav-logo {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--fg);
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+    .nav-back {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--fg);
+      text-decoration: none;
+      text-transform: uppercase;
+      opacity: 0.5;
+      transition: opacity 0.3s;
+    }
+    .nav-back:hover { opacity: 1; }
+
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 140px 40px 80px;
+      flex: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--accent);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .page-label::before { content: ''; width: 30px; height: 1px; background: var(--accent); }
+
+    .page-title {
+      font-family: var(--font-display);
+      font-size: clamp(52px, 8vw, 100px);
+      line-height: 0.9;
+      color: var(--fg);
+      margin-bottom: 20px;
+    }
+
+    .page-desc {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.9;
+      color: var(--fg);
+      opacity: 0.45;
+      max-width: 480px;
+      margin-bottom: 48px;
+    }
+
+    .cta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 14px 28px;
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.2s, color 0.2s;
+      align-self: flex-start;
+    }
+    .cta:hover { background: var(--accent); color: var(--bg); }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1px;
+      border: 1px solid var(--muted);
+      margin-top: 60px;
+      margin-bottom: 40px;
+    }
+    .meta-cell {
+      padding: 20px 24px;
+      border-right: 1px solid var(--muted);
+    }
+    .meta-cell:last-child { border-right: none; }
+    .meta-key {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      margin-bottom: 6px;
+    }
+    .meta-val {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg);
+      opacity: 0.7;
+      line-height: 1.7;
+    }
+
+    footer {
+      border-top: 1px solid var(--muted);
+      padding: 24px 40px;
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted2);
+      letter-spacing: 0.1em;
+    }
+
+    @media (max-width: 768px) {
+      nav, main, footer { padding-left: 20px; padding-right: 20px; }
+      .meta-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div class="scanline"></div>
+
+<nav>
+  <a href="/" class="nav-logo">cmastral_</a>
+  <a href="/" class="nav-back">← back</a>
+</nav>
+
+<main>
+  <div class="page-label">RAG / Spotify / 05</div>
+  <h1 class="page-title">echo_</h1>
+  <p class="page-desc">a spotify-connected rag system that builds a vector index of your musical identity and lets you query it conversationally. no data persists. your index lives for the session and is destroyed when you leave.</p>
+
+  <a href="https://cmastral.github.io/echo_/" class="cta">open echo_ →</a>
+
+  <div class="meta-grid">
+    <div class="meta-cell">
+      <div class="meta-key">vector store</div>
+      <div class="meta-val">qdrant in-memory<br>session-scoped</div>
+    </div>
+    <div class="meta-cell">
+      <div class="meta-key">embeddings</div>
+      <div class="meta-val">openai<br>text-embedding-3-small</div>
+    </div>
+    <div class="meta-cell">
+      <div class="meta-key">llm</div>
+      <div class="meta-val">claude<br>claude-sonnet-4-20250514</div>
+    </div>
+    <div class="meta-cell">
+      <div class="meta-key">enrichment</div>
+      <div class="meta-val">musicbrainz<br>wikipedia · spotify</div>
+    </div>
+    <div class="meta-cell">
+      <div class="meta-key">backend</div>
+      <div class="meta-val">fastapi<br>railway</div>
+    </div>
+    <div class="meta-cell">
+      <div class="meta-key">query types</div>
+      <div class="meta-val">identity · recommendation<br>comparison · gap</div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span>© <span id="footer-year"></span> Christina Mastralexi</span>
+  <span>rag · qdrant · claude · spotify</span>
+</footer>
+
+<script>
+const cursor = document.getElementById('cursor');
+const ring   = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top  = my + 'px';
+});
+(function animateRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top  = ry + 'px';
+  requestAnimationFrame(animateRing);
+})();
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

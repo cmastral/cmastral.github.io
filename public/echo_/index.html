@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='72' x='50' text-anchor='middle' font-family='monospace' font-size='64' font-weight='700' fill='%23c8f542'>e</text></svg>">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>echo_ — cmastral</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0a0a0a;
+      --fg:       #e8e0d0;
+      --accent:   #c8f542;
+      --accent2:  #c8f542;
+      --muted:    #3a3a3a;
+      --muted2:   #555;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-mono:    'Fragment Mono', monospace;
+      --font-body:    'Space Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.6;
+      cursor: none;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9000;
+      opacity: 0.4;
+    }
+
+    .scanline {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: rgba(200, 245, 66, 0.04);
+      z-index: 8999;
+      pointer-events: none;
+      animation: scanMove 8s linear infinite;
+    }
+    @keyframes scanMove { from { top: -2px; } to { top: 100vh; } }
+
+    #cursor {
+      position: fixed;
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s, height 0.2s, background 0.2s;
+      mix-blend-mode: difference;
+    }
+    #cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1px solid var(--fg);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      opacity: 0.5;
+    }
+    body:has(a:hover) #cursor,
+    body:has(button:hover) #cursor { width: 18px; height: 18px; background: var(--accent); }
+    body:has(a:hover) #cursor-ring,
+    body:has(button:hover) #cursor-ring { width: 56px; height: 56px; border-color: var(--accent); }
+
+    /* ── Nav ───────────────────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      mix-blend-mode: difference;
+    }
+    .nav-logo {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--fg);
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+    .nav-back {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--fg);
+      text-decoration: none;
+      text-transform: uppercase;
+      opacity: 0.5;
+      transition: opacity 0.3s;
+    }
+    .nav-back:hover { opacity: 1; }
+
+    /* ── Main layout ───────────────────────────────────────────────────── */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 140px 40px 80px;
+      flex: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--accent);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .page-label::before { content: ''; width: 30px; height: 1px; background: var(--accent); }
+
+    .page-title {
+      font-family: var(--font-display);
+      font-size: clamp(52px, 8vw, 100px);
+      line-height: 0.9;
+      color: var(--fg);
+      margin-bottom: 20px;
+    }
+
+    .page-desc {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.9;
+      color: var(--fg);
+      opacity: 0.45;
+      max-width: 480px;
+      margin-bottom: 48px;
+    }
+
+    /* ── States ────────────────────────────────────────────────────────── */
+    .state { display: none; }
+    .state.active { display: flex; flex-direction: column; }
+
+    /* ── Connect state ─────────────────────────────────────────────────── */
+    #connect-btn {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 14px 28px;
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      cursor: none;
+      transition: background 0.2s, color 0.2s;
+      align-self: flex-start;
+    }
+    #connect-btn:hover { background: var(--accent); color: var(--bg); }
+
+    /* ── Ingest state ──────────────────────────────────────────────────── */
+    #trace-panel {
+      border: 1px solid var(--muted);
+      border-left: 2px solid #1a1a1a;
+      transition: border-color 0.3s;
+      margin-bottom: 12px;
+    }
+    #trace-panel.active { border-left-color: var(--accent); }
+
+    #trace-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      border-bottom: 1px solid transparent;
+    }
+    #trace-panel.open #trace-header { border-bottom-color: var(--muted); }
+
+    .trace-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    #trace-panel.active .trace-label { color: var(--accent); }
+
+    #trace-log {
+      padding: 16px;
+      max-height: 320px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--muted) transparent;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .trace-line {
+      display: flex;
+      gap: 10px;
+      padding: 2px 0;
+      animation: traceFadeIn 0.15s ease;
+    }
+    @keyframes traceFadeIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; } }
+
+    .trace-arrow { color: var(--accent); opacity: 0.7; flex-shrink: 0; }
+    .trace-text  { color: var(--fg); opacity: 0.6; }
+    .trace-text.done { color: var(--accent); opacity: 1; }
+    .trace-text.err  { color: #ff4444; }
+
+    /* ── Query state ───────────────────────────────────────────────────── */
+    .panel {
+      border: 1px solid var(--muted);
+      display: flex;
+      flex-direction: column;
+      min-height: 380px;
+      max-height: 520px;
+    }
+
+    #response-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 28px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--muted) transparent;
+    }
+
+    .response-block {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .response-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .query-type-tag {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .gap-tag {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border: 1px solid var(--muted2);
+      color: var(--muted2);
+    }
+
+    .response-text {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.9;
+      color: var(--fg);
+      border-left: 2px solid var(--accent);
+      padding-left: 16px;
+    }
+
+    .response-text.streaming::after {
+      content: '▋';
+      animation: blink 0.8s step-end infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* Sources toggle */
+    .sources-toggle {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: none;
+      border: 1px solid var(--muted);
+      color: var(--muted2);
+      padding: 3px 10px;
+      cursor: none;
+      transition: color 0.2s, border-color 0.2s;
+      align-self: flex-start;
+    }
+    .sources-toggle:hover { color: var(--fg); border-color: var(--fg); }
+
+    .sources-list {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      border: 1px solid var(--muted);
+      border-left: 2px solid var(--muted);
+      padding: 12px 14px;
+    }
+    .sources-list.open { display: flex; }
+
+    .source-item {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      line-height: 1.6;
+      color: var(--fg);
+      opacity: 0.5;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .source-name { opacity: 0.9; color: var(--fg); }
+    .source-conf {
+      flex-shrink: 0;
+      color: var(--accent);
+      font-size: 9px;
+    }
+
+    /* Thinking indicator */
+    #thinking {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      padding: 0 28px 8px;
+      min-height: 24px;
+      animation: blink 1s step-end infinite;
+    }
+
+    #query-form {
+      display: flex;
+      border-top: 1px solid var(--muted);
+    }
+
+    #query-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 18px 20px;
+      outline: none;
+      letter-spacing: 0.04em;
+    }
+    #query-input::placeholder { color: var(--muted); }
+
+    #query-form button {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 18px 24px;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      cursor: none;
+      border-left: 1px solid var(--muted);
+      transition: background 0.2s;
+    }
+    #query-form button:hover { background: var(--fg); }
+    #query-form button:disabled { opacity: 0.4; }
+
+    /* ── Under the hood ────────────────────────────────────────────────── */
+    #hood-panel {
+      margin-top: 24px;
+      border: 1px solid var(--muted);
+      border-left: 2px solid #1a1a1a;
+      transition: border-color 0.3s;
+    }
+    #hood-panel.open { border-left-color: var(--muted2); }
+
+    #hood-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      border-bottom: 1px solid transparent;
+      cursor: none;
+      user-select: none;
+    }
+    #hood-panel.open #hood-header { border-bottom-color: var(--muted); }
+
+    .hood-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted2);
+    }
+
+    #hood-toggle {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: none;
+      border: 1px solid var(--muted);
+      color: var(--muted2);
+      padding: 3px 10px;
+      cursor: none;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    #hood-toggle:hover { color: var(--fg); border-color: var(--fg); }
+
+    #hood-content {
+      display: none;
+      padding: 24px 24px 28px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 2;
+      color: var(--fg);
+    }
+    #hood-panel.open #hood-content { display: block; }
+
+    #hood-content p { opacity: 0.5; margin-bottom: 20px; }
+    #hood-content .hood-section { margin-bottom: 24px; }
+    #hood-content .hood-title {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      opacity: 1;
+      margin-bottom: 8px;
+    }
+    #hood-content .hood-line { opacity: 0.45; padding-left: 4px; }
+    #hood-content .hood-line .key { color: var(--accent); opacity: 0.8; }
+    #hood-content .hood-line .val { color: var(--fg); opacity: 0.45; }
+
+    /* ── Footer ────────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--muted);
+      padding: 24px 40px;
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted2);
+      letter-spacing: 0.1em;
+    }
+
+    @media (max-width: 768px) {
+      nav, main, footer { padding-left: 20px; padding-right: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div class="scanline"></div>
+
+<nav>
+  <a href="https://cmastral.github.io" class="nav-logo">cmastral_</a>
+  <a href="https://cmastral.github.io" class="nav-back">← back</a>
+</nav>
+
+<main>
+  <div class="page-label">RAG / Spotify / 05</div>
+  <h1 class="page-title">echo_</h1>
+  <p class="page-desc">a spotify-connected rag system. connect your account — it builds a vector index of your musical identity and lets you query it conversationally.</p>
+
+  <!-- ── State: Connect ──────────────────────────────────────── -->
+  <div id="state-connect" class="state active">
+    <button id="connect-btn" onclick="startAuth()">connect spotify →</button>
+  </div>
+
+  <!-- ── State: Ingesting ────────────────────────────────────── -->
+  <div id="state-ingest" class="state">
+    <div id="trace-panel" class="active open">
+      <div id="trace-header">
+        <span class="trace-label">// ingestion pipeline</span>
+      </div>
+      <div id="trace-log"></div>
+    </div>
+  </div>
+
+  <!-- ── State: Query ────────────────────────────────────────── -->
+  <div id="state-query" class="state">
+    <div class="panel">
+      <div id="response-area"></div>
+      <div id="thinking"></div>
+      <form id="query-form" onsubmit="handleQuery(event)">
+        <input id="query-input" placeholder="what does my music say about me…" autocomplete="off" />
+        <button type="submit" id="send-btn">ask</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Under the hood (shown in query state) ───────────────── -->
+  <div id="hood-panel" style="display:none">
+    <div id="hood-header" onclick="toggleHood()">
+      <span class="hood-label">// under the hood_</span>
+      <button id="hood-toggle">show</button>
+    </div>
+    <div id="hood-content">
+      <div class="hood-section">
+        <div class="hood-title">ingestion pipeline</div>
+        <div class="hood-line">→ spotify oauth 2.0 pulls your top 50 artists, top 50 tracks,</div>
+        <div class="hood-line">  recently played, and audio features (energy, valence, tempo)</div>
+        <div class="hood-line">  per track via the spotify web api</div>
+        <br>
+        <div class="hood-line">→ each artist is enriched by an agentic pipeline:</div>
+        <div class="hood-line">  <span class="key">musicbrainz api</span> <span class="val">→ genres, origin, active years</span></div>
+        <div class="hood-line">  <span class="key">wikipedia api  </span> <span class="val">→ cultural and biographical context</span></div>
+        <div class="hood-line">  <span class="key">claude         </span> <span class="val">→ synthesizes a semantic description covering</span></div>
+        <div class="hood-line">                   mood profile, listener archetype, lyrical themes,</div>
+        <div class="hood-line">                   cultural positioning, influence network</div>
+        <br>
+        <div class="hood-line">→ enriched text chunks are embedded via openai text-embedding-3-small</div>
+        <div class="hood-line">  and stored in an in-memory qdrant vector index scoped to your session</div>
+        <br>
+        <div class="hood-line">→ no data is persisted. your index is destroyed when you leave.</div>
+      </div>
+
+      <div class="hood-section">
+        <div class="hood-title">retrieval</div>
+        <div class="hood-line">→ queries are classified by claude into one of four types:</div>
+        <div class="hood-line">  <span class="key">identity</span>       <span class="val">| recommendation | comparison | gap</span></div>
+        <br>
+        <div class="hood-line">→ each type triggers a different retrieval strategy:</div>
+        <div class="hood-line">  <span class="key">identity      </span> <span class="val">→ broad semantic search, full corpus</span></div>
+        <div class="hood-line">  <span class="key">recommendation</span> <span class="val">→ filtered by mood similarity, low affinity score</span></div>
+        <div class="hood-line">  <span class="key">comparison    </span> <span class="val">→ targeted retrieval of named entities</span></div>
+        <div class="hood-line">  <span class="key">gap           </span> <span class="val">→ low-confidence retrieval surfaces blind spots</span></div>
+        <br>
+        <div class="hood-line">→ retrieved chunks are reranked by a second claude call</div>
+        <div class="hood-line">  before being passed to the answer generation step</div>
+      </div>
+
+      <div class="hood-section">
+        <div class="hood-title">answer generation</div>
+        <div class="hood-line">→ claude is instructed to answer only from retrieved context,</div>
+        <div class="hood-line">  never from prior knowledge</div>
+        <div class="hood-line">→ every answer cites which artists or tracks informed it</div>
+        <div class="hood-line">→ confidence scores are surfaced per retrieved chunk</div>
+      </div>
+
+      <div class="hood-section">
+        <div class="hood-title">stack</div>
+        <div class="hood-line">  <span class="key">backend  </span> <span class="val">→ fastapi on huggingface spaces (python)</span></div>
+        <div class="hood-line">  <span class="key">vectors  </span> <span class="val">→ qdrant in-memory (session-scoped, no persistence)</span></div>
+        <div class="hood-line">  <span class="key">embeddings</span> <span class="val">→ openai text-embedding-3-small</span></div>
+        <div class="hood-line">  <span class="key">llm      </span> <span class="val">→ anthropic claude claude-sonnet-4-20250514</span></div>
+        <div class="hood-line">  <span class="key">enrichment</span> <span class="val">→ musicbrainz api, wikipedia rest api, spotify audio features</span></div>
+        <div class="hood-line">  <span class="key">frontend </span> <span class="val">→ vanilla html/js, single file, github pages</span></div>
+        <div class="hood-line">  <span class="key">auth     </span> <span class="val">→ spotify oauth 2.0</span></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span>© <span id="footer-year"></span> Christina Mastralexi</span>
+  <span>qdrant · openai · claude · spotify</span>
+</footer>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const API = 'https://cmastral-echo-backend.hf.space';
+
+// ── Cursor ────────────────────────────────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const ring   = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top  = my + 'px';
+});
+(function animateRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top  = ry + 'px';
+  requestAnimationFrame(animateRing);
+})();
+
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+// ── State management ──────────────────────────────────────────────────────────
+let sessionId = null;
+
+function setState(name) {
+  document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+  document.getElementById('state-' + name).classList.add('active');
+  document.getElementById('hood-panel').style.display = name === 'query' ? 'block' : 'none';
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+function startAuth() {
+  window.location.href = API + '/auth/login';
+}
+
+// On load — check if we came back from OAuth
+(function checkSession() {
+  const params = new URLSearchParams(window.location.search);
+  const sid    = params.get('session_id');
+  if (sid) {
+    sessionId = sid;
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+    setState('ingest');
+    startIngestion();
+  }
+})();
+
+// ── Ingestion ─────────────────────────────────────────────────────────────────
+const traceLog   = document.getElementById('trace-log');
+const tracePanel = document.getElementById('trace-panel');
+
+function addTraceLine(text, cls = '') {
+  const line  = document.createElement('div');
+  line.className = 'trace-line';
+  const arrow = document.createElement('span');
+  arrow.className = 'trace-arrow';
+  arrow.textContent = '→';
+  const span  = document.createElement('span');
+  span.className = 'trace-text' + (cls ? ' ' + cls : '');
+  span.textContent = text;
+  line.appendChild(arrow);
+  line.appendChild(span);
+  traceLog.appendChild(line);
+  traceLog.scrollTop = traceLog.scrollHeight;
+}
+
+async function startIngestion() {
+  addTraceLine('connecting to spotify…');
+
+  const res = await fetch(`${API}/ingest?session_id=${sessionId}`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    addTraceLine('ingestion failed: ' + res.status, 'err');
+    return;
+  }
+
+  const reader  = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buf += decoder.decode(value, { stream: true });
+    const parts = buf.split('\n\n');
+    buf = parts.pop();
+
+    for (const part of parts) {
+      if (!part.startsWith('data: ')) continue;
+      let evt;
+      try { evt = JSON.parse(part.slice(6)); } catch { continue; }
+
+      if (evt.type === 'fetching') {
+        addTraceLine(evt.message);
+      } else if (evt.type === 'enriching') {
+        addTraceLine(`enriching ${evt.artist} (${evt.progress}/${evt.total})…`);
+      } else if (evt.type === 'enriching_track') {
+        if (evt.progress === 1) addTraceLine(`enriching ${evt.total} tracks…`);
+      } else if (evt.type === 'embedding') {
+        addTraceLine('embedding chunks…');
+      } else if (evt.type === 'indexing') {
+        addTraceLine('building vector index…');
+      } else if (evt.type === 'ready') {
+        addTraceLine(`ready. (${evt.artist_count} artists, ${evt.track_count} tracks)`, 'done');
+        setTimeout(() => setState('query'), 800);
+      } else if (evt.type === 'error') {
+        addTraceLine('error: ' + evt.message, 'err');
+      }
+    }
+  }
+}
+
+// ── Query ─────────────────────────────────────────────────────────────────────
+const responseArea = document.getElementById('response-area');
+const thinkEl      = document.getElementById('thinking');
+const queryInput   = document.getElementById('query-input');
+const sendBtn      = document.getElementById('send-btn');
+
+function setThinking(text) {
+  thinkEl.textContent = text ? '> ' + text : '';
+}
+
+async function handleQuery(e) {
+  e.preventDefault();
+  const q = queryInput.value.trim();
+  if (!q) return;
+
+  queryInput.value   = '';
+  queryInput.disabled = true;
+  sendBtn.disabled    = true;
+  setThinking('classifying…');
+
+  // Create response block
+  const block      = document.createElement('div');
+  block.className  = 'response-block';
+  const metaRow    = document.createElement('div');
+  metaRow.className = 'response-meta';
+  const textEl     = document.createElement('div');
+  textEl.className = 'response-text streaming';
+  block.appendChild(metaRow);
+  block.appendChild(textEl);
+  responseArea.appendChild(block);
+  responseArea.scrollTop = responseArea.scrollHeight;
+
+  let queryType = null;
+  let isGap     = false;
+  let sourcesData = [];
+
+  try {
+    const res = await fetch(`${API}/query`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q, session_id: sessionId, filters: {} }),
+    });
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf       = '';
+    let fullText  = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buf += decoder.decode(value, { stream: true });
+      const parts = buf.split('\n\n');
+      buf = parts.pop();
+
+      for (const part of parts) {
+        if (!part.startsWith('data: ')) continue;
+        let evt;
+        try { evt = JSON.parse(part.slice(6)); } catch { continue; }
+
+        if (evt.type === 'classifying') {
+          setThinking('classifying…');
+        } else if (evt.type === 'query_type') {
+          queryType = evt.query_type;
+          setThinking('retrieving ' + queryType + ' context…');
+          const tag = document.createElement('span');
+          tag.className = 'query-type-tag';
+          tag.textContent = '[' + queryType + ']';
+          metaRow.appendChild(tag);
+        } else if (evt.type === 'retrieving') {
+          setThinking('retrieving…');
+        } else if (evt.type === 'reranking') {
+          setThinking('reranking…');
+        } else if (evt.type === 'generating') {
+          setThinking('generating…');
+        } else if (evt.type === 'token') {
+          fullText += evt.text;
+          textEl.textContent = fullText;
+          textEl.classList.add('streaming');
+          responseArea.scrollTop = responseArea.scrollHeight;
+        } else if (evt.type === 'answer') {
+          textEl.textContent = evt.answer;
+          textEl.classList.remove('streaming');
+          isGap       = evt.is_gap;
+          sourcesData = evt.sources || [];
+
+          if (isGap) {
+            const gapTag = document.createElement('span');
+            gapTag.className = 'gap-tag';
+            gapTag.textContent = '[gap]';
+            metaRow.appendChild(gapTag);
+          }
+
+          // Build sources UI
+          if (sourcesData.length > 0) {
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'sources-toggle';
+            toggleBtn.textContent = 'sources →';
+
+            const sourcesList = document.createElement('div');
+            sourcesList.className = 'sources-list';
+
+            sourcesData.forEach(s => {
+              const item    = document.createElement('div');
+              item.className = 'source-item';
+              const name    = s.metadata.artist_name || s.metadata.track_name || 'unknown';
+              const type    = s.metadata.type || '';
+              item.innerHTML = `<span><span class="source-name">${name}</span> <span style="opacity:0.4">${type}</span></span><span class="source-conf">${(s.confidence * 100).toFixed(0)}%</span>`;
+              sourcesList.appendChild(item);
+            });
+
+            toggleBtn.addEventListener('click', () => {
+              const open = sourcesList.classList.toggle('open');
+              toggleBtn.textContent = open ? 'sources ↑' : 'sources →';
+            });
+
+            block.appendChild(toggleBtn);
+            block.appendChild(sourcesList);
+          }
+        } else if (evt.type === 'done') {
+          break;
+        }
+      }
+    }
+  } catch (err) {
+    textEl.textContent  = 'something went wrong — ' + err.message;
+    textEl.classList.remove('streaming');
+  } finally {
+    setThinking('');
+    queryInput.disabled = false;
+    sendBtn.disabled    = false;
+    queryInput.focus();
+  }
+}
+
+// ── Under the hood toggle ─────────────────────────────────────────────────────
+let hoodOpen = false;
+function toggleHood() {
+  hoodOpen = !hoodOpen;
+  document.getElementById('hood-panel').classList.toggle('open', hoodOpen);
+  document.getElementById('hood-toggle').textContent = hoodOpen ? 'hide' : 'show';
+}
+</script>
+</body>
+</html>
